@@ -6,11 +6,12 @@
         @dblclick="type"
         @keypress.enter="type(false)">
         <div class="reference">
-            <div class="shape" :class="shape" ref="shape"></div>
-            <div class="inside-text" unselectable="on" onselectstart="return false;" >
-                <p v-show="!isTyping">{{text}}</p>
-                <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" rows="3">
-                </textarea>
+            <div class="shape" :class="shape" ref="shape">
+                <div class="inside-text" unselectable="on" onselectstart="return false;" >
+                    <p v-show="!isTyping">{{text}}</p>
+                    <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" rows="3">
+                    </textarea>
+                </div>
             </div>
             <button v-show="isSelected" class="align-button" @click="setAlignment()">
                 <fa :icon="fas.faAlignCenter"/>
@@ -114,6 +115,7 @@ export default {
                     const angularHeight = height - 10;
                     const ang = Math.atan(angularBase/angularHeight)*180/Math.PI
                     this.$refs.shape.style.transform = `skewX(-${ang}deg)`;
+                    this.$refs.shape.querySelector('.inside-text').style.transform = `skewX(${ang}deg)`;
                 }
                 this.emmitEventToLinkedArrows('resize')
             }
@@ -287,6 +289,10 @@ export default {
 .shape.delay {
     border-top-right-radius: 50%;
     border-bottom-right-radius: 50%;
+}
+
+.shape.data .inside-text {
+    transform: skew(20deg);
 }
 
 .inside-text {
