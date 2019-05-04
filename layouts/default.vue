@@ -27,6 +27,20 @@ html {
   box-sizing: border-box;
 }
 
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(17, 45, 68, 0.5);
+  border-radius: 16px;
+}
+
 *,
 *:before,
 *:after {

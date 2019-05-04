@@ -22,8 +22,8 @@ export function buildArrow (id, from, to) {
         arrowEl.style.width = `${2*missRange + Math.max(Math.abs(to.xPos - from.xPos), 2)}px`
         arrowEl.style.height = `${2*missRange + Math.max(Math.abs(to.yPos - from.yPos), 2)}px`
     
-        arrowEl.style.left = `${Math.min(to.xPos, from.xPos) - missRange - toolsPanelWidth}px`
-        arrowEl.style.top = `${Math.min(to.yPos, from.yPos) - missRange - 65}px`
+        arrowEl.style.left = `${Math.min(to.xPos, from.xPos) - missRange - toolsPanelWidth + window.scrollX}px`
+        arrowEl.style.top = `${Math.min(to.yPos, from.yPos) - missRange - 65 + window.scrollY}px`
     }
 
     const fromEl = document.getElementById(from)

@@ -1,21 +1,30 @@
 <template>
-    <div class="component" :class="[shape, {'selected': isSelected}, {'from': isFrom}]" ref="component" :id="id"
+    <div class="component" :class="[shape, {'selected': isSelected}, {'from': isFrom}, {'new-piece': newPiece}]" 
+        ref="component" :id="id" kg-lock-aspect="false"
         @mousedown="select" 
-        @mousemove="e => drag(e)"
-        @mouseup="checkPosition"
-        @dblclick="type"
-        @keypress.enter="type(false)">
+        @mouseup="checkPosition">
         <div class="reference">
-            <div class="shape" :class="shape" ref="shape">
+            <div class="shape" :class="shape" ref="shape"
+            @mousemove="e => drag(e)"
+            @dblclick="type"
+            @keypress.enter="type(false)">
                 <div class="inside-text" unselectable="on" onselectstart="return false;" >
                     <p v-show="!isTyping">{{text}}</p>
                     <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" rows="3">
                     </textarea>
                 </div>
             </div>
-            <button v-show="isSelected" class="align-button" @click="setAlignment()">
-                <fa :icon="fas.faAlignCenter"/>
-            </button>
+            <div v-if="isSelected" class="options-buttons bottom">
+                <button class="copy-button mr-1" @click="copyElement()">
+                    <fa :icon="fas.faCopy"/>
+                </button>
+               <button v-show="$store.state.components.quantity > 1" class="align-button mr-1" @click="setAlignment()">
+                    <fa :icon="fas.faAlignCenter"/>
+                </button>
+                <button v-show="$store.state.components.quantity > 1" class="arrow-button" @click="setArrow()">
+                    <fa :icon="fas.faLongArrowAltUp" style="transform: rotate(45deg);"/>
+                </button>
+            </div>
             <div v-show="isSelected" class="resizer top-left" @mousemove="e => resize(e, 'left', 'top')"></div>        
             <div v-show="isSelected" class="resizer top-right" @mousemove="e => resize(e, 'right', 'top')"></div>        
             <div v-show="isSelected" class="resizer bottom-right" @mousemove="e => resize(e, 'right', 'bottom')"></div>        
@@ -30,7 +39,7 @@ import { fas } from '@fortawesome/free-solid-svg-icons'
 
 export default {
     name: "BlockComponent",
-    props: ['id', 'shape', 'Xpos', 'Ypos', 'props', '$store'],
+    props: ['id', 'shape', 'Xpos', 'Ypos', 'props', 'isCopy', '$store'],
     data: function() {
         return {
             newPiece: true,
@@ -80,7 +89,7 @@ export default {
             if(e.buttons && !this.resizing.active && !this.isTyping && (this.isSelected || this.newPiece)) {
                 this.isDragging = true
                 this.$refs.component.style.top = `${e.clientY - this.$refs.component.offsetHeight/2 - 65 + window.scrollY}px`
-                this.$refs.component.style.left = `${e.clientX - this.$refs.component.offsetWidth/2 - this.toolsPanelWidth}px`
+                this.$refs.component.style.left = `${e.clientX - this.$refs.component.offsetWidth/2 - this.toolsPanelWidth + window.scrollX}px`
                 this.emmitEventToLinkedArrows('drag')
             }
         },
@@ -95,19 +104,47 @@ export default {
                 else if (document.selection) {document.selection.empty();}
 
                 const elStyle = window.getComputedStyle(this.$refs.component, null)
+                var width = 0;
+                var height = 0;
+
+                const originalWidth = this.$refs.component.getBoundingClientRect().width
+                const originalHeight = this.$refs.component.getBoundingClientRect().height
+                const aspect = originalHeight/originalWidth
+                const isLocked = this.$refs.component.getAttribute('kg-lock-aspect')
 
                 if(dirX === 'right') {
-                    this.$refs.component.style.width = `${Math.max(e.pageX - this.$refs.component.getBoundingClientRect().left, 30)}px`
+                    width = Math.max(e.pageX - this.$refs.component.getBoundingClientRect().left, 30)
                 } else {
-                    this.$refs.component.style.width = `${Math.max(this.$refs.component.getBoundingClientRect().right - e.pageX, 30)}px`
-                    if(parseInt(elStyle.getPropertyValue('width')) > 30) this.$refs.component.style.left = `${e.pageX - this.toolsPanelWidth}px`
+                    width = Math.max(this.$refs.component.getBoundingClientRect().right - e.pageX, 30)
                 }
                 if(dirY === 'bottom') {
-                    this.$refs.component.style.height = `${Math.max(e.pageY - this.$refs.component.getBoundingClientRect().top + window.scrollY, 30)}px`
+                    height = Math.max(e.pageY - this.$refs.component.getBoundingClientRect().top + window.scrollY, 30)
                 } else {
-                    this.$refs.component.style.height = `${Math.max(this.$refs.component.getBoundingClientRect().bottom - e.pageY, 30)}px`
-                    if(parseInt(elStyle.getPropertyValue('height')) > 30) this.$refs.component.style.top = `${e.pageY - 65}px`
+                    height = Math.max(this.$refs.component.getBoundingClientRect().bottom - e.pageY, 30)
                 }
+
+                if(isLocked !== 'false') {
+                    if(Math.abs(originalWidth - width) <= Math.abs(originalHeight - height)) {
+                        height = width*aspect
+                    } else {
+                        width = height/aspect
+                    }
+                }
+
+                this.$refs.component.style.width = width + 'px';
+                if(dirX == 'left' && parseInt(elStyle.getPropertyValue('width')) > 30) {
+                    const left = this.$refs.component.getBoundingClientRect().left
+                    const truePageX = left + (originalWidth - width)
+                    this.$refs.component.style.left = `${truePageX - this.toolsPanelWidth}px`
+                }
+
+                this.$refs.component.style.height = height + 'px';
+                if(dirY == 'top' && parseInt(elStyle.getPropertyValue('height')) > 30) {
+                    const top = this.$refs.component.getBoundingClientRect().top
+                    const truePageY = top + (originalHeight - height)
+                    this.$refs.component.style.top = `${truePageY - 65}px`
+                }
+
                 if(this.shape === 'data') {
                     const width = parseInt(elStyle.getPropertyValue('width'));
                     const height = parseInt(elStyle.getPropertyValue('height'));
@@ -118,6 +155,7 @@ export default {
                     this.$refs.shape.querySelector('.inside-text').style.transform = `skewX(${ang}deg)`;
                 }
                 this.emmitEventToLinkedArrows('resize')
+                this.$store.commit('emmitEventToIndex', 'resize')
             }
         },
         migrateToWindow(e) {
@@ -138,6 +176,10 @@ export default {
                 this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             }
+            if(this.newPiece) {
+                this.$store.commit('components/changeSelection', '')
+                this.newPiece = false
+            }
         },
         checkSelection(e) {
             const interactors = Array.from(document.getElementsByClassName('interactor'))
@@ -156,6 +198,7 @@ export default {
                 this.isAligning = false
             }
             this.isTyping = this.isSelected? this.isTyping : false
+            this.resizing.active = false;
         },
         emmitEventToLinkedArrows(ev) {
             const linkedArrows = this.$store.state.components.arrowLib.filter(pair => pair.indexOf(this.id) !== -1)
@@ -175,6 +218,12 @@ export default {
                 this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             })
+        },
+        copyElement() {
+            this.$store.commit('emmitEventToIndex', 'copy')
+        },
+        setArrow() {
+            this.$store.commit('emmitEventToIndex', 'makeArrow')
         },
         setAlignment() {
             this.$store.commit('components/toggleAligning')
@@ -206,11 +255,19 @@ export default {
         }
     },
     mounted() {
-        this.$refs.component.style.top = `${this.Ypos}px`
-        this.$refs.component.style.left = `${this.Xpos}px`
+        this.$refs.component.style.top = `${this.Ypos}px`;
+        this.$refs.component.style.left = `${this.Xpos}px`;
         this.$refs.shape.style.backgroundColor = this.props.bgColor
         this.$refs.shape.style.border = `${this.props.borderWidth} ${this.props.borderStyle} ${this.props.borderColor}`;
         this.$refs.component.querySelector('p').style.color = this.props.fontColor;
+        this.$refs.component.querySelector('p').style.fontSize = `${this.props.fontSize}`;
+        if(this.shape === 'connector') {
+            this.$refs.component.setAttribute('kg-lock-aspect', 'true')
+        }
+        if(this.isCopy) {
+            this.$refs.component.style.height = `${this.props.height}px`;
+            this.$refs.component.style.width = `${this.props.width}px`;
+        }
         window.addEventListener('mousemove', this.migrateToWindow)
         window.addEventListener('click', this.checkSelection)
     }
@@ -278,11 +335,11 @@ export default {
           clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
 
-.component.conector, .component.delay {
+.component.connector, .component.delay {
     width: 80px;
 }
 
-.shape.conector {
+.shape.connector {
     border-radius: 50%;
 }
 
@@ -333,6 +390,7 @@ export default {
     letter-spacing: 0.4px;
     margin-bottom: 0;
     line-height: 150%;
+    font-size: 12px;
 }
 
 .resizers {
@@ -374,15 +432,33 @@ export default {
     cursor: sw-resize;
 }
 
-button.align-button {
+.options-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: calc(100% + 5px);
+    top: -30px;
+}
+
+.options-buttons.bottom {
+    flex-direction: row;
+    left: auto;
+    top: auto;
+    right: auto;
+    bottom: -30px;
+}
+
+button.align-button,
+button.copy-button,
+button.arrow-button {
     width: 25px;
     height: 25px;
     background-color: var(--theme-color-1);
     border: none;
     border-radius: 5px;
-    position: absolute;
     outline: none;
-    left: calc(100% + 5px);
     padding: 1 0;
     animation-name: buttonshowff;
     animation-duration: 30s;
@@ -390,6 +466,10 @@ button.align-button {
 
 button.align-button svg {
     color: #fcfcfc;
+}
+
+.new-piece {
+    z-index: 91;
 }
 
 @keyframes buttonshowoff {

@@ -52,6 +52,9 @@ export default {
     padding-top: 0;
     padding-bottom: 0;
     height: 65px;
+
+    position: fixed;
+    width: 100vw;
 }
 
 .navbar li {

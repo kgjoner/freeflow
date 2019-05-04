@@ -79,7 +79,7 @@ export default {
             }
             const height = parseInt(window.getComputedStyle(this.$refs.outerBox, null).getPropertyValue('height'));
             const width = parseInt(window.getComputedStyle(this.$refs.outerBox, null).getPropertyValue('width'));
-            if(mode === '1') {
+            if(mode === '1' || mode === `4`) {
                 validClick = (limits[this.direction.vertical] - this.missRange < e.clientY 
                     && e.clientY < limits[this.direction.vertical] + this.missRange) ||
                     (limits[this.direction.horizontal] - this.missRange < e.clientX 
@@ -183,24 +183,42 @@ export default {
             this.$refs.outerBox.style.width = `${2*this.missRange + Math.max(Math.abs(to.xPos - from.xPos), 2)}px`
             this.$refs.outerBox.style.height = `${2*this.missRange + Math.max(Math.abs(to.yPos - from.yPos), 2)}px`
 
-            this.$refs.outerBox.style.left = `${Math.min(to.xPos, from.xPos) - this.missRange - this.toolsPanelWidth}px`
-            this.$refs.outerBox.style.top = `${Math.min(to.yPos, from.yPos) - this.missRange - 65}px`
+            this.$refs.outerBox.style.left = `${Math.min(to.xPos, from.xPos) - this.missRange - this.toolsPanelWidth + window.scrollX}px`
+            this.$refs.outerBox.style.top = `${Math.min(to.yPos, from.yPos) - this.missRange - 65 + window.scrollY}px`
         },
         setPosition(mode, Xperc = this.labelPos.x, Yperc = this.labelPos.y) {
             const height = parseInt(window.getComputedStyle(this.$refs.mode, null).getPropertyValue('height'));
             const width = parseInt(window.getComputedStyle(this.$refs.mode, null).getPropertyValue('width'));
-            const Xpos = Xperc*width;
+            var Xpos = Xperc*width;
             var Ypos = Yperc*height;
             const vertical = this.direction.vertical;
             const horizontal = this.direction.horizontal;
             var Xset = '';
             var Yset = '';
 
-            if(width < this.sizes.fromEl.width/2) {
+            if(width < this.sizes.fromEl.width/2 && mode != 4) {
                 Ypos = vertical == 'top' ? Math.max(this.sizes.fromEl.height/2, Ypos) 
                 : Math.min(height - this.sizes.fromEl.height/2, Ypos)
                 if(vertical != 'top' && (height - this.sizes.fromEl.height/2) == Ypos) {
                     Ypos -= this.$refs.label.offsetHeight
+                }
+            } else if (width < this.sizes.toEl.width/2 && mode == 4) {
+                Ypos = vertical == 'top' ? Math.max(this.sizes.toEl.height/2, Ypos) 
+                : Math.min(height - this.sizes.toEl.height/2, Ypos)
+                if(vertical != 'top' && (height - this.sizes.toEl.height/2) == Ypos) {
+                    Ypos -= this.$refs.label.offsetHeight
+                }
+            } else if (height < this.sizes.toEl.height/2 && mode !=4) {
+                Xpos = horizontal == 'left' ? Math.max(this.sizes.toEl.width/2, Xpos)
+                : Math.min(width - this.sizes.toEl.width/2, Xpos)
+                if(horizontal != 'left' && (width - this.sizes.toEl.width/2) == Xpos) {
+                    Xpos -= this.$refs.label.offsetWidth + 10
+                }
+            } else if (height < this.sizes.fromEl.height/2 && mode ==4) {
+                Xpos = horizontal == 'left' ? Math.max(this.sizes.fromEl.width/2, Xpos)
+                : Math.min(width - this.sizes.fromEl.width/2, Xpos)
+                if(horizontal != 'left' && (width - this.sizes.fromEl.width/2) == Xpos) {
+                    Xpos -= this.$refs.label.offsetWidth + 10
                 }
             }
 
@@ -243,12 +261,25 @@ export default {
                         : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.fromEl.width/2 + 10)
                     Yset = horizontal == 'right' ? height - this.$refs.label.offsetHeight : (vertical == 'top' ? -26 : 0)
                 }
+            } else if (mode == 4) {
+                const Ylim = vertical == 'top' ? 10 : height - 40
+                if(Ypos < Ylim) {
+                    Xset = vertical == 'top' ? (horizontal == 'right' ? Math.max(Xpos, this.sizes.toEl.width/2 + 10) 
+                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.toEl.width/2 + 10)) : width + 10
+                    Yset = vertical == 'top' ? -26 : Math.min(height - Ypos - this.$refs.label.offsetHeight, height - this.sizes.fromEl.height/2 - 30)
+                } else {
+                    Xset = vertical == 'top' ? width + 10 : (horizontal == 'right' ? Math.max(Xpos, this.sizes.toEl.width/2 + 10) 
+                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.toEl.width/2 + 10))
+                    Yset = vertical == 'top' ? Math.min(Ypos, height - this.sizes.fromEl.height/2 - 30) : 0
+                }
             }
 
             this.$refs.label.style[this.direction.vertical] = `${Yset}px`;
             this.$refs.label.style[this.direction.horizontal] = `auto`;
             this.$refs.label.style[this.reverseDirection.vertical] = `auto`
             this.$refs.label.style[this.reverseDirection.horizontal] = `${Xset}px`
+
+            return mode
         },
         dragLabel(e) {
             if(e.buttons && this.isSelected) {
@@ -298,16 +329,29 @@ export default {
             }
             this.$refs.head.style[this.direction.vertical] = 'auto';
             this.$refs.head.style[this.reverseDirection.horizontal] = 'auto';
+
+            if(mode == 4) {
+                const rotate = this.direction.horizontal === 'left' ? '90' : '270';
+                this.$refs.head.style.transform = `rotate(${rotate}deg)`;
+                this.$refs.head.style[this.direction.vertical] = `-7px`;
+                this.$refs.head.style[this.reverseDirection.horizontal] = `${this.sizes.toEl.width/2 - 5}px`;
+                this.$refs.head.style[this.reverseDirection.vertical] = 'auto';
+                this.$refs.head.style[this.direction.horizontal] = 'auto';
+            }
         },
-        updateDirection() {
+        updateDirection(mode) {
             const fromEl = document.getElementById(this.from)
             const toEl = document.getElementById(this.to)
 
             const fromPoint = this.getMiddlePoint(fromEl)
             const toPoint = this.getMiddlePoint(toEl)
 
-            const newHor = fromPoint.xPos < toPoint.xPos ? 'right' : 'left';
-            const newVer = fromPoint.yPos < toPoint.yPos ? 'top' : 'bottom';
+            const newHor = fromPoint.xPos < toPoint.xPos ? 
+                mode == 4? 'left' : 'right'
+                : mode == 4? 'right' : 'left';
+            const newVer = fromPoint.yPos < toPoint.yPos ? 
+                mode == 4? 'bottom' : 'top'
+                : mode == 4? 'top' : 'bottom';
 
             if(newHor != this.direction.horizontal) {
                 this.direction.horizontal = newHor;
@@ -320,6 +364,8 @@ export default {
                 this.$refs.mainBody.classList.add(`bd-${this.direction.vertical}`)
                 this.labelPos.y = 1 - this.labelPos.y;
             }
+
+            return mode
         },
         updateSizes() {
             const fromEl = document.getElementById(this.from)
@@ -337,12 +383,11 @@ export default {
     watch: {
         update(value) {
             if(value !== 'off' && typeof value === 'string') {
-                if(value !== 'updateMode') this.updateDirection()
                 if(value === 'resize') this.updateSizes()
                 const mode = this.$refs.mode.getAttribute('kg-mode')
-                this.setPosition(mode)
-                this.checkHeadPosition(mode)
+                this.checkHeadPosition(this.setPosition(this.updateDirection(mode)))
                 this.$store.commit('components/emmitEventToArrow', [this.id, 'off'])
+                if(value === 'updateMode') this.checkHeadPosition(this.setPosition(this.updateDirection(mode)))
             } else if (typeof value === 'object' && value) {
                 this.select(value)
             }
@@ -404,28 +449,34 @@ export default {
     color: var(--selected-color) !important;
 }
 
-[kg-mode='1'] .main-body {
+[kg-mode='1'] .main-body,
+[kg-mode='4'] .main-body {
     width: 100%;
     height: 100%;
 }
 
-[kg-mode='1'] .main-body.bd-top {
+[kg-mode='1'] .main-body.bd-top,
+[kg-mode='4'] .main-body.bd-top {
     border-top: 1px solid var(--border-color);
 }
 
-[kg-mode='1'] .main-body.bd-right {
+[kg-mode='1'] .main-body.bd-right,
+[kg-mode='4'] .main-body.bd-right {
     border-right: 1px solid var(--border-color);
 }
 
-[kg-mode='1'] .main-body.bd-bottom {
+[kg-mode='1'] .main-body.bd-bottom,
+[kg-mode='4'] .main-body.bd-bottom {
     border-bottom: 1px solid var(--border-color);
 }
 
-[kg-mode='1'] .main-body.bd-left {
+[kg-mode='1'] .main-body.bd-left,
+[kg-mode='4'] .main-body.bd-left {
     border-left: 1px solid var(--border-color);
 }
 
-[kg-mode='1'] .aditional-body {
+[kg-mode='1'] .aditional-body, 
+[kg-mode='4'] .aditional-body {
     display: none;
 }
 
@@ -486,6 +537,7 @@ export default {
     color: rgba(0,0,0,0.6);
     font-size: 1.1rem;
     font-variant: small-caps;
+    text-transform: lowercase;
 
     position: absolute;
     margin-bottom: 0;

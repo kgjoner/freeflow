@@ -1,14 +1,19 @@
 <template>
-    <section class="build">
-        <div class="build-site" ref="buildSite">
+    <section class="build" :style="`width: ${canvas.width}px;`">
+        <div class="canvas-size">
+                <span>canvas</span>
+                <input type="number" v-model="canvas.width"> x
+                <input type="number" v-model="canvas.height">
+        </div>
+        <div class="build-site" ref="buildSite" :style="`height: ${canvas.height}px; width: ${canvas.width}px;`">
             <div v-show="$store.state.components.makingArrow" class="making-info">From?</div>
             <div v-show="$store.state.components.makingArrow && $store.state.components.arrowFrom" class="making-info">To?</div>
             <div v-show="$store.state.components.aligning" class="making-info">Align with?</div>
-            <h2 v-show="$store.state.components.quantity == 0">Drag and drop a shape here!</h2>
+            <h2 v-show="$store.state.components.quantity == 0 && canvas.height > 0">Drag and drop a shape here!</h2>
         </div>
         <aside class="tools">
             <b-tabs class="shapes mb-4" v-model="tabIndex">
-                <b-tab title="Shapes" class="mt-3 ml-3" @click="tabIndex = 0">
+                <b-tab title="Build" class="mt-3 ml-3" @click="tabIndex = 0">
                     <div class="shape-tools mt-4 ml-1 mr-4">
                         <div>
                             <button class="terminator-tool" @mousedown="e => addComponent(e, 'terminator')"
@@ -31,9 +36,9 @@
                             <p class="label-decision">Decision</p>
                         </div>
                         <div>
-                            <button class="conector-tool mr-4" @mousedown="e => addComponent(e, 'conector')"
+                            <button class="connector-tool mr-4" @mousedown="e => addComponent(e, 'connector')"
                                 :disabled="isMakingArrow"></button>
-                            <p class="label-conector">Connector</p>
+                            <p class="label-connector">Connector</p>
                         </div>
                         <div>
                             <button class="delay-tool mr-3" @mousedown="e => addComponent(e, 'delay')"
@@ -41,11 +46,49 @@
                             <p class="label-delay">Delay</p>
                         </div>
                     </div>
+                    <div class="arrow-tool mb-5">
+                        <h4 class="mt-4 ml-3">Arrow</h4>
+                        <input type="text" class="arrow-label mt-2 ml-4 interactor" placeholder="No label" v-model="arrow.label" 
+                            @focus="activateTyping" @change="changeArrow(arrow.mode)">
+                        <button v-if="isArrowSelected" class="make-arrow mt-2 ml-2 interactor" @click="changeArrow(arrow.mode)">Update</button>
+                        <b-button v-else class="make-arrow mt-2 ml-2 interactor" :class="{'making-arrow' : isMakingArrow, 'ghost': $store.state.components.quantity < 2}" 
+                            :disabled="isMakingArrow || $store.state.components.quantity < 2" @click="setArrow()">Make</b-button>
+                        <div v-show="isArrowSelected" class="arrow-mode interactor mt-3 ml-4">
+                            <button class="mode-option mode-1 interactor" :class="{'active-mode': arrow.mode === 1}" @click="changeArrow(1)">
+                                <div class="build-block-1 interactor"></div>
+                            </button>
+                            <button class="mode-option mode-4 interactor" :class="{'active-mode': arrow.mode === 4}" @click="changeArrow(4)">
+                                <div class="build-block-1 interactor"></div>
+                            </button>
+                            <button class="mode-option mode-2 interactor" :class="{'active-mode': arrow.mode === 2}"  @click="changeArrow(2)">
+                                <div class="build-block-1 interactor"></div>
+                                <div class="build-block-2 interactor"></div>
+                            </button>
+                            <button class="mode-option mode-3 interactor" :class="{'active-mode': arrow.mode === 3}"  @click="changeArrow(3)">
+                                <div class="build-block-1 interactor"></div>
+                                <div class="build-block-2 interactor"></div>
+                            </button>
+                        </div>
+                    </div>
                 </b-tab>
                 <b-tab title="Properties" class="mt-3 ml-3">
-                    <div class="prop mt-4 ml-4 mb-3">
-                        <p>Font: </p>
-                        <input type="color" class="ml-3 interactor color-picker" v-model="props.fontColor" @change="changeStyle">
+                    <div class="mt-4 ml-4 mb-3">
+                        <div class="default-msg mb-4">
+                            <p v-show="!selectedEl">Default Values</p>
+                            <p v-show="selectedEl">Selection Values</p>
+                        </div>
+                        <div class="prop">
+                            <p>Font: </p>
+                            <select class="ml-3 interactor" v-model="props.fontSize" @change="changeStyle">
+                                <option value="12px">12</option>
+                                <option value="14px">14</option>
+                                <option value="16px">16</option>
+                                <option value="18px">18</option>
+                                <option value="20px">20</option>
+                                <option value="22px">22</option>
+                            </select>
+                            <input type="color" class="ml-3 interactor color-picker" v-model="props.fontColor" @change="changeStyle">
+                        </div>
                     </div>
                     <div class="prop mt-2 ml-4 mb-3">
                         <p>Background: </p>
@@ -68,29 +111,24 @@
                         </select>
                         <input type="color" class="ml-3 interactor color-picker" v-model="props.borderColor" @change="changeStyle">
                     </div>
+                    <div v-show="selectedEl" class="size-control">
+                        <div>
+                            <div class="prop mt-2 ml-4 mb-3">
+                                <p>Height: </p>
+                                <input @focus="activateTyping" type="number" class="ml-3 interactor size-picker" v-model="props.height" @change="changeStyle">
+                            </div>
+                            <div class="prop mt-2 ml-4 mb-3">
+                                <p>Width: </p>
+                                <input @focus="activateTyping" type="number" class="ml-3 interactor size-picker" v-model="props.width" @change="changeStyle">
+                            </div>
+                        </div>
+                        <button @click="lockAspect()" class="locker ml-3 interactor" :class="{'locked': props.isLocked}">
+                            <fa v-if="!props.isLocked" class="interactor" :icon="fas.faUnlock"/>
+                            <fa v-else class="interactor" :icon="fas.faLock"/>
+                        </button>
+                    </div>
                 </b-tab>
             </b-tabs>
-            <div class="arrow-tool mb-5">
-                <h4 class="mt-3 ml-3">Arrow</h4>
-                <input type="text" class="arrow-label mt-2 ml-4 interactor" placeholder="No label" v-model="arrow.label" 
-                    @focus="activateTyping" @change="changeArrow(arrow.mode)">
-                <button v-if="isArrowSelected" class="make-arrow mt-2 ml-2 interactor" @click="changeArrow(arrow.mode)">Update</button>
-                <b-button v-else class="make-arrow mt-2 ml-2 interactor" :class="{'making-arrow' : isMakingArrow, 'ghost': $store.state.components.quantity < 2}" 
-                    :disabled="isMakingArrow || $store.state.components.quantity < 2" @click="setArrow()">Make</b-button>
-                <div v-show="isArrowSelected" class="arrow-mode interactor mt-3 ml-4">
-                    <button class="mode-option mode-1 interactor" :class="{'active-mode': arrow.mode === 1}" @click="changeArrow(1)">
-                        <div class="build-block-1 interactor"></div>
-                    </button>
-                    <button class="mode-option mode-2 interactor" :class="{'active-mode': arrow.mode === 2}"  @click="changeArrow(2)">
-                        <div class="build-block-1 interactor"></div>
-                        <div class="build-block-2 interactor"></div>
-                    </button>
-                    <button class="mode-option mode-3 interactor" :class="{'active-mode': arrow.mode === 3}"  @click="changeArrow(3)">
-                        <div class="build-block-1 interactor"></div>
-                        <div class="build-block-2 interactor"></div>
-                    </button>
-                </div>
-            </div>
             <button class="to-canvas" @click="saveCanvas()">Download as Image</button>
         </aside>
     </section>
@@ -100,6 +138,7 @@
 import Constructor from '@/components/tools/component'
 import ArrowModel from '@/components/tools/arrow'
 import domtoimage from 'dom-to-image'
+import { fas } from '@fortawesome/free-solid-svg-icons'
 
 import Vue from 'vue'
 
@@ -113,14 +152,24 @@ export default {
                 borderColor: '#5ec4d1',
                 borderStyle: 'solid',
                 borderWidth: '1px',
-                fontColor: '#fcfcfc'
+                fontSize: '14px',
+                fontColor: '#fcfcfc',
+                height: '80',
+                width: '150',
+                isLocked: false,
+                aspect: 0.47
             },
             propsDefault: {
                 bgColor: '#6ecbdb',
                 borderColor: '#5ec4d1',
                 borderStyle: 'solid',
                 borderWidth: '1px',
-                fontColor: '#fcfcfc'
+                fontSize: '14px',
+                fontColor: '#fcfcfc',
+                height: '80',
+                width: '150',
+                isLocked: false,
+                aspect: 0.47
             },
             arrow: {
                 mode: 1,
@@ -129,7 +178,10 @@ export default {
                 default: 1,
             },
             tabIndex: 0,
-            isCanvas: false,
+            canvas: {
+                height: 0,
+                width: 0,
+            }
         }
     },
     computed: {
@@ -148,21 +200,29 @@ export default {
         },
         isAnyTyping() {
             return this.$store.state.isAnyTyping
+        },
+        wasThereAnEvent() {
+            return this.$store.state.wasThereAnEvent
+        },
+        fas() {
+            return fas
         }
     },
     methods: {
-        addComponent(e, shape) {
+        addComponent(e, shape, isCopy = false) {
             const el = document.createElement('div')
             el.id = 'addHere';
             this.$refs.buildSite.appendChild(el);
             const Component = Vue.extend(Constructor)
+            if(shape == 'connector' || shape == 'delay') this.props.width = 80;
             const instance = new Component({
                 propsData: {
                     id: this.$store.getters['components/nextId'],
                     shape,
-                    Xpos: e.clientX - 75 - 340,
-                    Ypos: e.clientY - 40 - 65,
+                    Xpos: e.clientX - this.props.width/2 - 340 + window.scrollX,
+                    Ypos: e.clientY - this.props.height/2 - 65 + window.scrollY,
                     props: this.props,
+                    isCopy,
                     $store: this.$store
                 }
             })
@@ -174,10 +234,20 @@ export default {
         changeStyle() {
             if(this.currentEl) {
                 const shapeDiv = this.currentEl.querySelector('.shape')
+                if(this.props.isLocked) {
+                    if(this.props.height != this.currentEl.getBoundingClientRect().height) {
+                        this.props.width = this.props.height/this.props.aspect;
+                    } else {
+                        this.props.height = this.props.width*this.props.aspect;
+                    }
+                }
+                this.currentEl.style.height = this.props.height + 'px';
+                this.currentEl.style.width = this.props.width + 'px';
                 shapeDiv.style.backgroundColor = this.props.bgColor;
                 shapeDiv.style.borderColor = this.props.borderColor;
                 shapeDiv.style.borderStyle = this.props.borderStyle;
                 shapeDiv.style.borderWidth = this.props.borderWidth;
+                this.currentEl.querySelector('p').style.fontSize = `${this.props.fontSize}`;
                 this.currentEl.querySelector('p').style.color = this.props.fontColor;
             } else {
                 this.propsDefault = this.props
@@ -207,11 +277,15 @@ export default {
                 this.$store.commit('components/changeSelection', '')
             })
         },
-        setArrow() {
+        setArrow(isFromAlready = false) {
             if(!this.isMakingArrow) {
+                const id = this.selectedEl;
                 this.$store.commit('components/changeSelection', '')
                 this.$store.commit('components/toggleMakingArrow')
                 window.addEventListener('click', this.addArrow)
+                if(isFromAlready) {
+                    this.$store.commit('components/changeSelection', id)
+                }
             }
         },
         addArrow() {
@@ -259,6 +333,11 @@ export default {
                 this.arrow.mode = mode;
             }
         },
+        lockAspect() {
+            this.props.isLocked = !this.props.isLocked;
+            this.props.aspect = this.currentEl.getBoundingClientRect().height/this.currentEl.getBoundingClientRect().width
+            this.currentEl.setAttribute('kg-lock-aspect', this.props.isLocked)
+        },
         activateTyping() {
             this.$store.commit('changeTyping', true)
         },
@@ -290,6 +369,7 @@ export default {
     watch: {
         selectedEl(value) {
             this.currentEl = value? document.getElementById(value) : ''
+            document.querySelector('.locker').querySelector('path').classList.add('interactor')
             if(value && !this.isArrowSelected) {
                 const shapeStyle = window.getComputedStyle(this.currentEl.querySelector('.shape'), null)
                 this.props = {
@@ -297,7 +377,11 @@ export default {
                     borderColor: this.rgbToHex(shapeStyle.getPropertyValue('border-color')),
                     borderStyle: shapeStyle.getPropertyValue('border-style'),
                     borderWidth: shapeStyle.getPropertyValue('border-width'),
-                    fontColor: this.rgbToHex(window.getComputedStyle(this.currentEl.querySelector('p'), null).getPropertyValue('color'))
+                    fontSize: window.getComputedStyle(this.currentEl.querySelector('p'), null).getPropertyValue('font-size'),
+                    fontColor: this.rgbToHex(window.getComputedStyle(this.currentEl.querySelector('p'), null).getPropertyValue('color')),
+                    height: Math.ceil(this.currentEl.getBoundingClientRect().height),
+                    width: Math.ceil(this.currentEl.getBoundingClientRect().width),
+                    isLocked: this.currentEl.getAttribute('kg-lock-aspect') === 'true'
                 }
                 this.tabIndex = 1
             } else if(value && this.isArrowSelected) {
@@ -308,6 +392,7 @@ export default {
                     label: this.currentEl.querySelector('.arrow-label').innerHTML || this.arrow.label,
                     default: this.arrow.default
                 }
+                this.tabIndex = 0
             } else {
                 this.props = this.propsDefault
                 this.arrow = {
@@ -323,8 +408,28 @@ export default {
                 this.$store.commit('changeTyping', false)
             }
         },
+        wasThereAnEvent(value) {
+            if(value === 'resize') {
+                this.props.height = Math.ceil(this.currentEl.getBoundingClientRect().height);
+                this.props.width = Math.ceil(this.currentEl.getBoundingClientRect().width);
+                this.$store.commit('clearEvent');
+            } else if (value === 'copy') {
+                const shape = this.currentEl.classList[1]
+                const e = {
+                    clientX: this.currentEl.getBoundingClientRect().right,
+                    clientY: this.currentEl.getBoundingClientRect().bottom
+                }
+                this.addComponent(e, shape, true)
+                this.$store.commit('clearEvent');
+            } else if (value === 'makeArrow') {
+                this.setArrow(true)
+                this.$store.commit('clearEvent');
+            }
+        },
     },
     mounted() {
+        this.canvas.width = window.innerWidth - 340;
+        this.canvas.height = window.innerHeight - 65;
         window.addEventListener('keydown', this.deleteComponent)
     }
 }
@@ -345,7 +450,10 @@ export default {
     justify-content: space-between;
     flex-direction: row-reverse;
     height: calc(100vh - 65px);
-    overflow-Y: scroll;
+    padding-top: 65px;
+
+    position: relative;
+    left: 340px;
 }
 
 .build h2 {
@@ -364,10 +472,47 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    max-height: calc(100vh - 65px);
+    height: calc(100vh - 65px);
+    width: calc(100vw - 340px);
 
     position: relative;
+    /* left: 340px; */
     background: transparent;
+}
+
+.build .canvas-size {
+    position: fixed;
+    top: 15px;
+    left: calc(50vw + 20px)
+}
+
+.build .canvas-size span {
+    font-size: 0.9rem;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    letter-spacing: 0.5px;
+    color: #fcfcfccc;
+}
+
+.build .canvas-size input {
+    background-color: transparent;
+    width: 100px;
+    text-align: center;
+    padding: 3px 0;
+    border: 1px solid #fcfcfc55;
+    border-radius: 5px;
+    outline: none;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button
+{
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.build .canvas-size input:focus {
+    border-color: var(--theme-color-2);
+    border-width: 1.5px;
 }
 
 .build-site .making-info {
@@ -384,7 +529,11 @@ export default {
 .tools {
     width: 340px;
     overflow: hidden;
+    position: fixed;
+    height: calc(100vh - 65px);
+    left: 0;
     background-color:var(--bg-tools);
+    z-index: 90;
 }
 
 ul.nav-tabs {
@@ -449,7 +598,7 @@ ul.nav-tabs {
     left: -7px;
 }
 
-.tools .shape-tools .label-conector {
+.tools .shape-tools .label-connector {
     left: -10px;
 }
 
@@ -476,7 +625,7 @@ ul.nav-tabs {
     transform: rotate(-45deg) skew(20deg, 20deg);
 }
 
-.tools .shape-tools button.conector-tool {
+.tools .shape-tools button.connector-tool {
     height: 40px;
     width: 40px;
     border-radius: 50%;
@@ -499,7 +648,8 @@ ul.nav-tabs {
     margin-top: 7px;
 }
 
-.tools select.interactor, .tools .color-picker {
+.tools select.interactor, .tools .color-picker,
+.tools .size-picker {
     height: 36px;
     outline: none;
     background-color: var(--off-tools);
@@ -511,6 +661,62 @@ ul.nav-tabs {
 
 .tools input.color-picker {
     padding: 5px;
+}
+
+.tools .size-picker {
+    padding: 2px 10px;
+    width: 80px;
+}
+
+.tools .size-control {
+    display: flex;
+    align-items: center;
+}
+
+.tools .locker:before {
+    content: ' ';
+    height: 25px;
+    width: 25px;
+    border-top: 1px solid var(--off-tools);
+    border-right: 1px solid var(--off-tools);
+    position: absolute;
+    left: -10px;
+    top: -12px;
+}
+
+.tools .locker:after {
+    content: ' ';
+    height: 25px;
+    width: 25px;
+    border-right: 1px solid var(--off-tools);
+    border-bottom: 1px solid var(--off-tools);
+    position: absolute;
+    left: -10px;
+    top: 32px;
+}
+
+.tools .locker {
+    background-color: var(--bg-tools);
+    border: none;
+    height: 80%;
+    position: relative;
+    top: -8px;
+    outline: none;
+    padding: 10px 8px;
+    border-radius: 4px;
+}
+
+.tools .locker [fill='currentColor'] {
+    color: #fcfcfcaa;
+}
+
+.tools .locker.locked [fill='currentColor'] {
+    color: #fcfcfccc;
+}
+
+.tools .locker.locked:after,
+.tools .locker.locked:before {
+    border-color: #fcfcfcaa;
 }
 
 .arrow-tool .arrow-label {
@@ -554,7 +760,7 @@ ul.nav-tabs {
 .arrow-mode {
     display: flex;
     justify-content: space-between;
-    width: 140px;
+    width: 180px;
 }
 
 .arrow-mode .mode-option {
@@ -589,6 +795,13 @@ ul.nav-tabs {
     height: 100%;
     border-top: 2px solid #fcfcfcaa;
     border-right: 2px solid #fcfcfcaa;
+}
+
+.arrow-mode .mode-4 .build-block-1 {
+    width: 100%;
+    height: 100%;
+    border-bottom: 2px solid #fcfcfcaa;
+    border-left: 2px solid #fcfcfcaa;
 }
 
 .arrow-mode .mode-2 .build-block-1 {
@@ -638,5 +851,21 @@ ul.nav-tabs {
     background-color: var(--theme-color-1);
     color: #fff;
     border-color: var(--theme-color-1);
+}
+
+.default-msg {
+    /* display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; */
+    margin-top: 0px;
+    margin-right: 16px;
+}
+
+.default-msg p {
+    color: #fcfcfc55;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 5px;
 }
 </style>

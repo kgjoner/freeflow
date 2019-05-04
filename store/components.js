@@ -7,7 +7,7 @@ export const state = () => ({
     arrowTo: null,
     arrowLib: [],
     aligning: false,
-    alignWith: null
+    alignWith: null,
 })
 
 export const getters = {
