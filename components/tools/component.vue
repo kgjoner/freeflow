@@ -9,9 +9,16 @@
             @dblclick="type"
             @keypress.enter="type(false)">
                 <div class="inside-text" unselectable="on" onselectstart="return false;" >
-                    <p v-show="!isTyping">{{text}}</p>
-                    <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" rows="3">
-                    </textarea>
+                    <div class="crop-left" kg-border="1px"></div>
+                    <div class="crop-right"></div>
+                    <div class="real-text">
+                        <p v-show="!isTyping">
+                            {{text}}
+                        </p>
+                        <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" 
+                            @focusout="centralizeText()" rows="3">
+                        </textarea>
+                    </div>
                 </div>
             </div>
             <div v-if="isSelected" class="options-buttons bottom">
@@ -34,7 +41,7 @@
 </template>
 
 <script>
-import {buildArrow} from "../../global"
+import {buildArrow, centralizeTextVertically} from "../../global"
 import { fas } from '@fortawesome/free-solid-svg-icons'
 
 export default {
@@ -91,6 +98,7 @@ export default {
                 this.$refs.component.style.top = `${e.clientY - this.$refs.component.offsetHeight/2 - 65 + window.scrollY}px`
                 this.$refs.component.style.left = `${e.clientX - this.$refs.component.offsetWidth/2 - this.toolsPanelWidth + window.scrollX}px`
                 this.emmitEventToLinkedArrows('drag')
+                this.$store.commit('emmitEventToIndex', 'drag')
             }
         },
         resize(e, dirX, dirY) {
@@ -252,7 +260,10 @@ export default {
                 xPos: left + width/2,
                 yPos: top + height/2
             }
-        }
+        },
+        centralizeText() {
+            setTimeout(() => centralizeTextVertically(this.$refs.component, 'p'), 100)
+        },
     },
     mounted() {
         this.$refs.component.style.top = `${this.Ypos}px`;
@@ -268,6 +279,8 @@ export default {
             this.$refs.component.style.height = `${this.props.height}px`;
             this.$refs.component.style.width = `${this.props.width}px`;
         }
+        centralizeTextVertically(this.$refs.component)
+        if(this.shape === 'decision') centralizeTextVertically(this.$refs.component)
         window.addEventListener('mousemove', this.migrateToWindow)
         window.addEventListener('click', this.checkSelection)
     }
@@ -332,8 +345,19 @@ export default {
     top: 2.5px;
     left: 2.5px;
     -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
+/* .shape.decision:before {
+    content: '';
+    position: absolute;
+    background-color: var(--theme-color-1);
+    height: calc(100% - 4px);
+    width: calc(50% - 2px);
+    top: 2px;
+    left: 2px;
+    -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+          clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+} */
 
 .component.connector, .component.delay {
     width: 80px;
@@ -353,18 +377,13 @@ export default {
 }
 
 .inside-text {
-    padding: 5px;
     width: 100%;
     height: 100%;
     overflow: hidden;
     position: absolute;
     z-index: 1;
     user-select: none;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    vertical-align: center;
 }
 
 .inside-text p {
@@ -374,13 +393,12 @@ export default {
     margin-bottom: 0;
     line-height: 150%;
     color: #fcfcfc;
+    text-align: center;
 }
 
 .type-box {
     width: 100%;
-    height: 100%;
     text-align: center;
-    vertical-align: center;
     background-color: transparent;
     border: none;
     outline: none;
@@ -391,6 +409,33 @@ export default {
     margin-bottom: 0;
     line-height: 150%;
     font-size: 12px;
+
+    position: absolute;
+}
+
+.shape.decision .type-box {
+    left: 0;
+}
+
+.shape.decision .crop-left {
+    content: ' ';
+    display: block;
+    float: left;
+    height: 100%;
+    width: 50%;
+    background-color: #5ec4d1;
+    clip-path: polygon(0% 0%, calc(100% + 2px) 0%, calc(0% + 2px) 50%, calc(100% + 2px) 100%, 0% 100%);
+    shape-outside: polygon(-10% 0%, 90% 0%, -10% 50%, 90% 100%, -10% 100%);
+}
+.shape.decision .crop-right {
+    content: ' ';
+    display: block;
+    float: right;
+    height: 100%;
+    width: 50%;
+    background-color: #5ec4d1;
+    clip-path: polygon(100% 0%, calc(0% - 2px) 0%, calc(100% - 2px) 50%, calc(0% - 2px) 100%, 100% 100%);
+    shape-outside: polygon(110% 0%, 10% 0%, 110% 50%, 10% 100%, 110% 100%);
 }
 
 .resizers {

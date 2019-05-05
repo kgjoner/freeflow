@@ -35,8 +35,9 @@ export default {
                     height: 0,
                     width: 0,
                 },
+            },
             isDragging: false,
-            }
+            trueMode: '1',
         }
     },
     computed: {
@@ -378,16 +379,39 @@ export default {
                     width: parseInt(window.getComputedStyle(el[0], null).getPropertyValue('width'))
                 }
             })
+        },
+        whetherStraightArrows(mode) {
+            const height = parseInt(window.getComputedStyle(this.$refs.mode, null).getPropertyValue('height'));
+            const width = parseInt(window.getComputedStyle(this.$refs.mode, null).getPropertyValue('width'));
+
+            if ((width < this.sizes.toEl.width/2 && mode == 4) 
+             || (width < this.sizes.toEl.width/2 && mode == 3) 
+             || (width < 20 && mode == 2)) {
+                this.$refs.mode.setAttribute('kg-mode', '1')
+                mode = 1;
+            } else if ((height < this.sizes.toEl.height/2 && mode == 1)
+             || (height < this.sizes.toEl.height/2 && mode == 2)  
+             || (height < 20 && mode == 3)) {
+                this.$refs.mode.setAttribute('kg-mode', '4')
+                mode = 4;
+            } else if ((height > this.sizes.toEl.height/2 && mode == 4)
+             || (width > this.sizes.toEl.width/2 && mode == 1)) {
+                this.$refs.mode.setAttribute('kg-mode', this.trueMode)
+                mode = this.trueMode
+            }
+
+            return mode
         }
     },
     watch: {
         update(value) {
             if(value !== 'off' && typeof value === 'string') {
-                if(value === 'resize') this.updateSizes()
                 const mode = this.$refs.mode.getAttribute('kg-mode')
-                this.checkHeadPosition(this.setPosition(this.updateDirection(mode)))
+                if(value === 'updateMode') this.trueMode = mode
+                if(value === 'resize') this.updateSizes()
+                this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(mode))))
                 this.$store.commit('components/emmitEventToArrow', [this.id, 'off'])
-                if(value === 'updateMode') this.checkHeadPosition(this.setPosition(this.updateDirection(mode)))
+                if(value === 'updateMode') this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(mode))))
             } else if (typeof value === 'object' && value) {
                 this.select(value)
             }

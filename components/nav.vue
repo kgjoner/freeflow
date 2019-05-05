@@ -55,6 +55,8 @@ export default {
 
     position: fixed;
     width: 100vw;
+    z-index: 90;
+    user-select: none;
 }
 
 .navbar li {

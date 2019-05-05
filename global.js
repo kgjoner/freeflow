@@ -35,4 +35,14 @@ export function buildArrow (id, from, to) {
     setOuterSize(fromPoint, toPoint)
 }
 
-export default {buildArrow}
+export function centralizeTextVertically(el, target = '.real-text') {
+    const text = el.querySelector(target)
+    const shape = el.querySelector('.shape')
+    if(text) {
+        const padding = (shape.getBoundingClientRect().height - 2*parseFloat(getComputedStyle(shape).borderWidth)
+            - text.getBoundingClientRect().height + parseFloat(getComputedStyle(text).paddingTop))/2;                    
+        el.querySelector('.real-text').style.paddingTop = `${Math.max(0, padding)}px`;
+    }
+}
+
+export default {buildArrow, centralizeTextVertically}

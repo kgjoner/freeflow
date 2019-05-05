@@ -2,14 +2,14 @@
     <section class="build" :style="`width: ${canvas.width}px;`">
         <div class="canvas-size">
                 <span>canvas</span>
-                <input type="number" v-model="canvas.width"> x
-                <input type="number" v-model="canvas.height">
+                <b-form-input type="number" id="canvas-width" v-model="canvas.width" :formatter="checkCanvasSize" lazy-formatter></b-form-input> x
+                <b-form-input type="number" id="canvas-height" v-model="canvas.height" :formatter="checkCanvasSize" lazy-formatter></b-form-input>
         </div>
         <div class="build-site" ref="buildSite" :style="`height: ${canvas.height}px; width: ${canvas.width}px;`">
             <div v-show="$store.state.components.makingArrow" class="making-info">From?</div>
             <div v-show="$store.state.components.makingArrow && $store.state.components.arrowFrom" class="making-info">To?</div>
             <div v-show="$store.state.components.aligning" class="making-info">Align with?</div>
-            <h2 v-show="$store.state.components.quantity == 0 && canvas.height > 0">Drag and drop a shape here!</h2>
+            <h2 v-show="$store.state.components.quantity == 0">Drag and drop a shape here!</h2>
         </div>
         <aside class="tools">
             <b-tabs class="shapes mb-4" v-model="tabIndex">
@@ -49,22 +49,27 @@
                     <div class="arrow-tool mb-5">
                         <h4 class="mt-4 ml-3">Arrow</h4>
                         <input type="text" class="arrow-label mt-2 ml-4 interactor" placeholder="No label" v-model="arrow.label" 
-                            @focus="activateTyping" @change="changeArrow(arrow.mode)">
+                            @focus="activateTyping" :disabled="isMakingArrow" @change="changeArrow(arrow.mode)">
                         <button v-if="isArrowSelected" class="make-arrow mt-2 ml-2 interactor" @click="changeArrow(arrow.mode)">Update</button>
+                        <button v-else-if="isMakingArrow" class="make-arrow mt-2 ml-2 interactor" @click="cancelArrow(arrow.mode)">Cancel</button>
                         <b-button v-else class="make-arrow mt-2 ml-2 interactor" :class="{'making-arrow' : isMakingArrow, 'ghost': $store.state.components.quantity < 2}" 
                             :disabled="isMakingArrow || $store.state.components.quantity < 2" @click="setArrow()">Make</b-button>
                         <div v-show="isArrowSelected" class="arrow-mode interactor mt-3 ml-4">
-                            <button class="mode-option mode-1 interactor" :class="{'active-mode': arrow.mode === 1}" @click="changeArrow(1)">
+                            <button v-show="!isArrowHorizontal" class="mode-option mode-1 interactor" 
+                            :class="{'active-mode': arrow.mode === 1}" @click="changeArrow(1)">
                                 <div class="build-block-1 interactor"></div>
                             </button>
-                            <button class="mode-option mode-4 interactor" :class="{'active-mode': arrow.mode === 4}" @click="changeArrow(4)">
+                            <button v-show="!isArrowVertical" class="mode-option mode-4 interactor" 
+                            :class="{'active-mode': arrow.mode === 4}" @click="changeArrow(4)">
                                 <div class="build-block-1 interactor"></div>
                             </button>
-                            <button class="mode-option mode-2 interactor" :class="{'active-mode': arrow.mode === 2}"  @click="changeArrow(2)">
+                            <button v-show="!isArrowHorizontal && !isArrowVertical" class="mode-option mode-2 interactor" 
+                            :class="{'active-mode': arrow.mode === 2}"  @click="changeArrow(2)">
                                 <div class="build-block-1 interactor"></div>
                                 <div class="build-block-2 interactor"></div>
                             </button>
-                            <button class="mode-option mode-3 interactor" :class="{'active-mode': arrow.mode === 3}"  @click="changeArrow(3)">
+                            <button v-show="!isArrowHorizontal && !isArrowVertical" class="mode-option mode-3 interactor" 
+                            :class="{'active-mode': arrow.mode === 3}"  @click="changeArrow(3)">
                                 <div class="build-block-1 interactor"></div>
                                 <div class="build-block-2 interactor"></div>
                             </button>
@@ -106,8 +111,8 @@
                         </select>
                         <select class="ml-3 interactor" v-model="props.borderStyle" @change="changeStyle">
                             <option value="solid">Solid</option>
-                            <option value="dashed">Dashed</option>
-                            <option value="dotted">Dotted</option>
+                            <option v-show="selectedShape != 'decision'" value="dashed">Dashed</option>
+                            <option v-show="selectedShape != 'decision'" value="dotted">Dotted</option>
                         </select>
                         <input type="color" class="ml-3 interactor color-picker" v-model="props.borderColor" @change="changeStyle">
                     </div>
@@ -129,7 +134,7 @@
                     </div>
                 </b-tab>
             </b-tabs>
-            <button class="to-canvas" @click="saveCanvas()">Download as Image</button>
+            <button class="to-canvas" @click="saveCanvas()" :disabled="isMakingArrow">Download as Image</button>
         </aside>
     </section>
 </template>
@@ -139,6 +144,7 @@ import Constructor from '@/components/tools/component'
 import ArrowModel from '@/components/tools/arrow'
 import domtoimage from 'dom-to-image'
 import { fas } from '@fortawesome/free-solid-svg-icons'
+import { centralizeTextVertically } from '../global'
 
 import Vue from 'vue'
 
@@ -206,6 +212,34 @@ export default {
         },
         fas() {
             return fas
+        },
+        isArrowHorizontal() {
+            if(this.currentEl) {
+                if(this.currentEl.id.toString().includes('to')) {
+                    const toElId = this.currentEl.id.split('to')[1]
+                    const toEl = document.getElementById(toElId)
+                    return (this.currentEl.getBoundingClientRect().height - 40 < toEl.getBoundingClientRect().height/2)
+                        && (this.arrow.mode != '3')
+                }
+            }
+        },
+        isArrowVertical() {
+            if(this.currentEl) {
+                if(this.currentEl.id.toString().includes('to')) {
+                    const toElId = this.currentEl.id.split('to')[1]
+                    const toEl = document.getElementById(toElId)
+                    return (this.currentEl.getBoundingClientRect().width - 40 < toEl.getBoundingClientRect().width/2)
+                        && (this.arrow.mode != '2')
+                }
+            }
+        },
+        selectedShape() {
+            if(this.currentEl) {
+                if(!this.currentEl.id.includes('to')) {
+                    return this.currentEl.classList[1]
+                }
+            }
+            return 'none'
         }
     },
     methods: {
@@ -247,8 +281,25 @@ export default {
                 shapeDiv.style.borderColor = this.props.borderColor;
                 shapeDiv.style.borderStyle = this.props.borderStyle;
                 shapeDiv.style.borderWidth = this.props.borderWidth;
+                if(shapeDiv.classList.contains('decision')) {
+                    shapeDiv.style.borderWidth = '0';
+                    const cropLeft = shapeDiv.querySelector('.crop-left')
+                    const cropRight = shapeDiv.querySelector('.crop-right')
+                    cropLeft.setAttribute('kg-border', this.props.borderWidth);
+                    cropLeft.style.backgroundColor = this.props.borderWidth != '0px' ? this.props.borderColor : 'transparent'
+                    cropRight.style.backgroundColor = this.props.borderWidth != '0px' ? this.props.borderColor : 'transparent'
+                    cropLeft.style.clipPath = `polygon(0% 0%, calc(100% + ${this.props.borderWidth} + 1px) 0%, 
+                        calc(0% + ${this.props.borderWidth} + 1px) 50%, calc(100% + ${this.props.borderWidth} + 1px) 100%, 0% 100%)`
+                    cropLeft.style.shapeOutside = `polygon(-5px 0%, calc(100% + ${this.props.borderWidth} - 5px) 0%, 
+                        calc(0% + ${this.props.borderWidth} - 5px) 50%, calc(100% + ${this.props.borderWidth} - 5px) 100%, -5px 100%)`
+                    cropRight.style.clipPath = `polygon(100% 0%, calc(0% - ${this.props.borderWidth} - 1px) 0%, 
+                        calc(100% - ${this.props.borderWidth} - 1px) 50%, calc(0% - ${this.props.borderWidth} - 1px) 100%, 100% 100%)`
+                    cropRight.style.shapeOutside = `polygon(calc(100% + 5px) 0%, calc(0% - ${this.props.borderWidth} + 5px) 0%, 
+                        calc(100% - ${this.props.borderWidth} + 5px) 50%, calc(0% - ${this.props.borderWidth} + 5px) 100%, calc(100% + 5px) 100%)`
+                }
                 this.currentEl.querySelector('p').style.fontSize = `${this.props.fontSize}`;
                 this.currentEl.querySelector('p').style.color = this.props.fontColor;
+                centralizeTextVertically(this.currentEl)
             } else {
                 this.propsDefault = this.props
             }
@@ -321,6 +372,10 @@ export default {
                 window.removeEventListener('click', this.addArrow)
             }
         },
+        cancelArrow() {
+            this.$store.commit('components/resetArrowSelection')
+            window.removeEventListener('click', this.addArrow)
+        },
         changeArrow(mode) {
             if(this.isArrowSelected) {
                 const arrowEl = this.currentEl.querySelector('.arrow-body')
@@ -354,6 +409,20 @@ export default {
                 document.body.removeChild(pom);     
             })
         },
+        checkCanvasSize(value, e) {
+            const allComponents = document.querySelectorAll('.component')
+            const highestVerticalPoint = [...allComponents].reduce((low, el) => {
+                return Math.max(low, Math.ceil(el.getBoundingClientRect().bottom + scrollY) - 65)
+            }, 0)
+            const highestHorizontalPoint = [...allComponents].reduce((low, el) => {
+                return Math.max(low, Math.ceil(el.getBoundingClientRect().right + scrollX) - 340)
+            }, 0)
+            if(e.target.id === 'canvas-width') {
+                return Math.max(value, Math.max(window.innerWidth - 340, highestHorizontalPoint))
+            } else {
+                return Math.max(value, Math.max(window.innerHeight - 65, highestVerticalPoint))
+            }
+        },
         rgbToHex(rgb) {
             rgb = rgb.split('rgb(').join('').split(')').join('').split(', ')
             var hex = rgb.map(v => {
@@ -382,6 +451,9 @@ export default {
                     height: Math.ceil(this.currentEl.getBoundingClientRect().height),
                     width: Math.ceil(this.currentEl.getBoundingClientRect().width),
                     isLocked: this.currentEl.getAttribute('kg-lock-aspect') === 'true'
+                }
+                if(this.currentEl.classList.contains('decision')) {
+                    this.props.borderWidth = this.currentEl.querySelector('.crop-left').getAttribute('kg-border')
                 }
                 this.tabIndex = 1
             } else if(value && this.isArrowSelected) {
@@ -412,6 +484,7 @@ export default {
             if(value === 'resize') {
                 this.props.height = Math.ceil(this.currentEl.getBoundingClientRect().height);
                 this.props.width = Math.ceil(this.currentEl.getBoundingClientRect().width);
+                centralizeTextVertically(this.currentEl);
                 this.$store.commit('clearEvent');
             } else if (value === 'copy') {
                 const shape = this.currentEl.classList[1]
@@ -423,6 +496,23 @@ export default {
                 this.$store.commit('clearEvent');
             } else if (value === 'makeArrow') {
                 this.setArrow(true)
+                this.$store.commit('clearEvent');
+            } else if (value === 'drag') {
+                if(this.currentEl.getBoundingClientRect().right + scrollX - 340 > this.canvas.width) {
+                    this.canvas.width = Math.ceil(this.currentEl.getBoundingClientRect().right + scrollX - 340);
+                } else if (this.currentEl.getBoundingClientRect().bottom + scrollY - 65 > this.canvas.height) {
+                    this.canvas.height = Math.ceil(this.currentEl.getBoundingClientRect().bottom + scrollY - 65);
+                }
+
+                if(this.currentEl.getBoundingClientRect().right > window.innerWidth) {
+                    window.scrollTo(window.scrollX + 5, window.scrollY)
+                } else if (this.currentEl.getBoundingClientRect().bottom > window.innerHeight) {
+                    window.scrollTo(window.scrollX, window.scrollY + 5)
+                } else if (this.currentEl.getBoundingClientRect().left < 340) {
+                    window.scrollTo(window.scrollX - 5, window.scrollY)
+                } else if (this.currentEl.getBoundingClientRect().top < 65) {
+                    window.scrollTo(window.scrollX, window.scrollY - 5)
+                }
                 this.$store.commit('clearEvent');
             }
         },
@@ -443,6 +533,7 @@ export default {
     --bg-tools: rgb(17, 45, 68);
     --off-tools: rgb(25, 61, 90);
     --over-tools: rgb(8, 35, 56);
+    --cancel-color: #ff5555;
 }
 
 .build {
@@ -454,6 +545,7 @@ export default {
 
     position: relative;
     left: 340px;
+    user-select: none;
 }
 
 .build h2 {
@@ -480,10 +572,23 @@ export default {
     background: transparent;
 }
 
+.build-site h2 {
+    position: fixed;
+    width: 357px;
+    left: calc(50vw + 170px - 178px);
+    top: calc(50vh + 32px - 19px);
+    user-select: none;
+}
+
 .build .canvas-size {
     position: fixed;
     top: 15px;
-    left: calc(50vw + 20px)
+    left: calc(50vw + 20px);
+    z-index: 91;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .build .canvas-size span {
@@ -493,14 +598,16 @@ export default {
     color: #fcfcfccc;
 }
 
-.build .canvas-size input {
+.build .canvas-size input.form-control {
     background-color: transparent;
-    width: 100px;
+    width: 90px;
     text-align: center;
     padding: 3px 0;
     border: 1px solid #fcfcfc55;
     border-radius: 5px;
     outline: none;
+    margin: 0 5px;
+    color: #fcfcfc;
 }
 
 input[type=number]::-webkit-inner-spin-button,
@@ -513,6 +620,7 @@ input[type=number]::-webkit-outer-spin-button
 .build .canvas-size input:focus {
     border-color: var(--theme-color-2);
     border-width: 1.5px;
+    box-shadow: 0 0 2px 0 var(--theme-color-2);
 }
 
 .build-site .making-info {
@@ -731,6 +839,10 @@ ul.nav-tabs {
     font-size: 1.1rem;
 }
 
+.arrow-tool .arrow-label[disabled='disabled'] {
+    border-color: #fcfcfc50;
+}
+
 .arrow-tool .make-arrow {
     height: 40px;
     width: 80px;
@@ -744,6 +856,12 @@ ul.nav-tabs {
     cursor: pointer;
 }
 
+.arrow-tool .cancel-arrow {
+    border-color: var(--cancel-color);
+    color: var(--cancel-color);
+    outline: none;
+}
+
 .arrow-tool .make-arrow.ghost,
 .arrow-tool .make-arrow.ghost:hover {
     border-color: #fcfcfc50;
@@ -754,6 +872,12 @@ ul.nav-tabs {
 .arrow-tool .make-arrow:hover,
 .arrow-tool .make-arrow.making-arrow {
     background-color: var(--theme-color-1);
+    color: #f2f2f2;
+    outline: none;
+}
+
+.arrow-tool .cancel-arrow:hover {
+    background-color: var(--cancel-color);
     color: #f2f2f2;
 }
 
@@ -790,17 +914,16 @@ ul.nav-tabs {
     border-color: #fcfcfc;
 }
 
-.arrow-mode .mode-1 .build-block-1 {
-    width: 100%;
-    height: 100%;
-    border-top: 2px solid #fcfcfcaa;
-    border-right: 2px solid #fcfcfcaa;
-}
-
 .arrow-mode .mode-4 .build-block-1 {
     width: 100%;
+    height: 1px;
+    border-top: 2px solid #fcfcfcaa;
+}
+
+.arrow-mode .mode-1 .build-block-1 {
+    width: 1px;
+    margin-left: 8px;
     height: 100%;
-    border-bottom: 2px solid #fcfcfcaa;
     border-left: 2px solid #fcfcfcaa;
 }
 
@@ -853,11 +976,16 @@ ul.nav-tabs {
     border-color: var(--theme-color-1);
 }
 
+.build button.to-canvas[disabled = "disabled"] {
+    border-color: #fcfcfc50;
+    color: #fcfcfc50;
+}
+
+.build button.to-canvas[disabled = "disabled"]:hover {
+    background-color: transparent;
+}
+
 .default-msg {
-    /* display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; */
     margin-top: 0px;
     margin-right: 16px;
 }

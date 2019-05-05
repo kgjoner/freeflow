@@ -35,6 +35,7 @@ export const mutations = {
     resetArrowSelection: state => {
         state.arrowTo = null;
         state.arrowFrom = null;
+        state.makingArrow = false;
     },
     resetAlignSelection: state => {
         state.alignWith = null;
