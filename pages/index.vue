@@ -305,8 +305,8 @@ export default {
                     const id = Number(this.currentEl.id)
                     this.deleteLinkedArrows(id)
                     document.querySelector(`.build-site`).removeChild(this.currentEl);
+                    this.$store.commit('components/minus')
                 }
-                this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             }
         },
@@ -316,7 +316,6 @@ export default {
                 const arrowId = arrow[0] + 'to' + arrow[1]
                 const arrowEl = document.getElementById(arrowId)
                 this.$store.commit('components/deleteArrow', arrowId)
-                this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             })
         },
@@ -361,7 +360,6 @@ export default {
                     this.$store.commit('components/pushArrowLib', [fromEl, toEl])
                 }
                 this.$store.commit('components/changeSelection', this.currentEl.id)
-                this.$store.commit('components/plus')
                 this.$store.commit('components/resetArrowSelection')
                 window.removeEventListener('click', this.addArrow)
             }

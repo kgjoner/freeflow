@@ -212,8 +212,11 @@ export default {
             const linkedArrows = this.$store.state.components.arrowLib.filter(pair => pair.indexOf(this.id) !== -1)
             linkedArrows.forEach(arrow => {
                 const id = arrow[0] + 'to' + arrow[1]
-                buildArrow(id, arrow[0], arrow[1])
-                this.$store.commit('components/emmitEventToArrow', [id, ev])
+                console.log(arrow[2])
+                if(arrow[2] !== 'deleted') {
+                    buildArrow(id, arrow[0], arrow[1])
+                    this.$store.commit('components/emmitEventToArrow', [id, ev])
+                }
             })
         },
         deleteLinkedArrows(id) {
@@ -223,7 +226,6 @@ export default {
                 const arrowEl = document.getElementById(arrowId)
                 this.$store.commit('components/deleteArrow', arrowId)
                 document.querySelector('.build-site').removeChild(arrowEl);
-                this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             })
         },
