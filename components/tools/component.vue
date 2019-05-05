@@ -16,7 +16,7 @@
                             {{text}}
                         </p>
                         <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" 
-                            @focusout="centralizeText()" rows="3">
+                            @focusout="centralizeText()" rows="1">
                         </textarea>
                     </div>
                 </div>

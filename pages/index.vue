@@ -196,7 +196,7 @@ export default {
         },
         isArrowSelected() {
             if(this.currentEl) {
-                return this.selectedEl.toString().includes('to')
+                return this.currentEl.id.toString().includes('to')
             } else {
                 return false
             }
@@ -288,14 +288,7 @@ export default {
                     cropLeft.setAttribute('kg-border', this.props.borderWidth);
                     cropLeft.style.backgroundColor = this.props.borderWidth != '0px' ? this.props.borderColor : 'transparent'
                     cropRight.style.backgroundColor = this.props.borderWidth != '0px' ? this.props.borderColor : 'transparent'
-                    cropLeft.style.clipPath = `polygon(0% 0%, calc(100% + ${this.props.borderWidth} + 1px) 0%, 
-                        calc(0% + ${this.props.borderWidth} + 1px) 50%, calc(100% + ${this.props.borderWidth} + 1px) 100%, 0% 100%)`
-                    cropLeft.style.shapeOutside = `polygon(-5px 0%, calc(100% + ${this.props.borderWidth} - 5px) 0%, 
-                        calc(0% + ${this.props.borderWidth} - 5px) 50%, calc(100% + ${this.props.borderWidth} - 5px) 100%, -5px 100%)`
-                    cropRight.style.clipPath = `polygon(100% 0%, calc(0% - ${this.props.borderWidth} - 1px) 0%, 
-                        calc(100% - ${this.props.borderWidth} - 1px) 50%, calc(0% - ${this.props.borderWidth} - 1px) 100%, 100% 100%)`
-                    cropRight.style.shapeOutside = `polygon(calc(100% + 5px) 0%, calc(0% - ${this.props.borderWidth} + 5px) 0%, 
-                        calc(100% - ${this.props.borderWidth} + 5px) 50%, calc(0% - ${this.props.borderWidth} + 5px) 100%, calc(100% + 5px) 100%)`
+                    this.correctDecisionBorder(shapeDiv)
                 }
                 this.currentEl.querySelector('p').style.fontSize = `${this.props.fontSize}`;
                 this.currentEl.querySelector('p').style.color = this.props.fontColor;
@@ -311,8 +304,8 @@ export default {
                 } else {
                     const id = Number(this.currentEl.id)
                     this.deleteLinkedArrows(id)
+                    document.querySelector(`.build-site`).removeChild(this.currentEl);
                 }
-                document.querySelector(`.build-site`).removeChild(this.currentEl);
                 this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             }
@@ -323,7 +316,6 @@ export default {
                 const arrowId = arrow[0] + 'to' + arrow[1]
                 const arrowEl = document.getElementById(arrowId)
                 this.$store.commit('components/deleteArrow', arrowId)
-                document.querySelector('.build-site').removeChild(arrowEl);
                 this.$store.commit('components/minus')
                 this.$store.commit('components/changeSelection', '')
             })
@@ -345,27 +337,29 @@ export default {
             if(!this.$store.state.components.makingArrow) {
                 const arrowId = fromEl + 'to' + toEl;
                 if(document.getElementById(arrowId)) {
-                    this.deleteLinkedArrows(arrowId)
-                    document.querySelector(`.build-site`).removeChild(document.getElementById(arrowId));
-                    this.$store.commit('components/minus')
-                    this.$store.commit('components/changeSelection', '')
-                }
-                const el = document.createElement('div')
-                el.id = 'addHere';
-                this.$refs.buildSite.appendChild(el);
-                const Component = Vue.extend(ArrowModel)
-                const instance = new Component({
-                    propsData: {
-                        id: fromEl + 'to' + toEl,
-                        from: fromEl,
-                        to: toEl,
-                        label: this.arrow.label,
-                        $store: this.$store
+                    this.currentEl = document.getElementById(arrowId)
+                    if(window.getComputedStyle(document.getElementById(arrowId)).getPropertyValue('display') == 'none') {
+                        this.changeArrow(this.arrow.mode)
+                        this.$store.commit('components/recreateArrow', arrowId)
                     }
-                })
-                instance.$mount('#addHere')
-                this.currentEl = instance.$el
-                this.$store.commit('components/pushArrowLib', [fromEl, toEl])
+                } else {
+                    const el = document.createElement('div')
+                    el.id = 'addHere';
+                    this.$refs.buildSite.appendChild(el);
+                    const Component = Vue.extend(ArrowModel)
+                    const instance = new Component({
+                        propsData: {
+                            id: fromEl + 'to' + toEl,
+                            from: fromEl,
+                            to: toEl,
+                            label: this.arrow.label,
+                            $store: this.$store
+                        }
+                    })
+                    instance.$mount('#addHere')
+                    this.currentEl = instance.$el
+                    this.$store.commit('components/pushArrowLib', [fromEl, toEl])
+                }
                 this.$store.commit('components/changeSelection', this.currentEl.id)
                 this.$store.commit('components/plus')
                 this.$store.commit('components/resetArrowSelection')
@@ -434,6 +428,24 @@ export default {
             })
             return "#" + hex.join('');
         },
+        correctDecisionBorder(shapeDiv) {
+            const cropLeft = shapeDiv.querySelector('.crop-left')
+            const cropRight = shapeDiv.querySelector('.crop-right')
+
+            const ang = Math.atan(shapeDiv.getBoundingClientRect().height/shapeDiv.getBoundingClientRect().width)
+            const xMove = parseInt(this.props.borderWidth)*Math.sin(ang);
+            const yMove = parseInt(this.props.borderWidth)*Math.cos(ang);
+            const xMoveMiddle = yMove/Math.tan(ang);
+
+            cropLeft.style.clipPath = `polygon(0% 0%, calc(100% + ${xMove}px) 0%, calc(100% + ${xMove}px) ${yMove}px,
+                calc(0% + ${xMove + xMoveMiddle}px) 50%, calc(100% + ${xMove}px) calc(100% - ${yMove}px), calc(100% + ${xMove}px) 100%, 0% 100%)`
+            cropLeft.style.shapeOutside = `polygon(-5px 0%, calc(100% + ${this.props.borderWidth} - 5px) 0%, 
+                calc(0% + ${this.props.borderWidth} - 5px) 50%, calc(100% + ${this.props.borderWidth} - 5px) 100%, -5px 100%)`
+            cropRight.style.clipPath = `polygon(100% 0%, calc(0% - ${xMove}px) 0%, calc(0% - ${xMove}px) ${yMove}px,
+                calc(100% - ${xMove + xMoveMiddle}px) 50%, calc(0% - ${xMove}px) calc(100% - ${yMove}px), calc(0% - ${xMove}px) 100%, 100% 100%)`
+            cropRight.style.shapeOutside = `polygon(calc(100% + 5px) 0%, calc(0% - ${this.props.borderWidth} + 5px) 0%, 
+                calc(100% - ${this.props.borderWidth} + 5px) 50%, calc(0% - ${this.props.borderWidth} + 5px) 100%, calc(100% + 5px) 100%)`
+        }
     },
     watch: {
         selectedEl(value) {
@@ -484,7 +496,12 @@ export default {
             if(value === 'resize') {
                 this.props.height = Math.ceil(this.currentEl.getBoundingClientRect().height);
                 this.props.width = Math.ceil(this.currentEl.getBoundingClientRect().width);
+
                 centralizeTextVertically(this.currentEl);
+                
+                const shapeDiv = this.currentEl.querySelector('.shape')
+                if(shapeDiv.classList.contains('decision')) this.correctDecisionBorder(shapeDiv)
+
                 this.$store.commit('clearEvent');
             } else if (value === 'copy') {
                 const shape = this.currentEl.classList[1]

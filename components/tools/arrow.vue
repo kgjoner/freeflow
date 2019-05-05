@@ -1,5 +1,5 @@
 <template>
-    <div class="arrow" :class="{'selected' : isSelected}" ref="outerBox" :id="id"
+    <div v-show="!isDeleted" class="arrow" :class="{'selected' : isSelected}" ref="outerBox" :id="id"
     @mousedown="e => select(e)">
         <div class="arrow-body" ref="mode">
             <div class="main-body" ref="mainBody"></div>
@@ -37,6 +37,7 @@ export default {
                 },
             },
             isDragging: false,
+            isDeleted: false,
             trueMode: '1',
         }
     },
@@ -405,15 +406,26 @@ export default {
     },
     watch: {
         update(value) {
-            if(value !== 'off' && typeof value === 'string') {
+            if(value !== 'off' && value !== 'deleted' && typeof value === 'string') {
+                if (value === 'recreated') {
+                    this.trueMode = '1'
+                    this.isDeleted = false;
+                }
                 const mode = this.$refs.mode.getAttribute('kg-mode')
                 if(value === 'updateMode') this.trueMode = mode
                 if(value === 'resize') this.updateSizes()
                 this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(mode))))
                 this.$store.commit('components/emmitEventToArrow', [this.id, 'off'])
-                if(value === 'updateMode') this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(mode))))
+                if(value === 'updateMode' || value === 'recreated') this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(mode))))
             } else if (typeof value === 'object' && value) {
                 this.select(value)
+            } else if ( value === 'deleted') {
+                this.trueMode = '1';
+                this.isDeleted = true;
+                this.labelPos = {
+                    x: 0,
+                    y: 0,
+                }
             }
         },
     },

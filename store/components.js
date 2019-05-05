@@ -57,13 +57,16 @@ export const mutations = {
     },
     pushArrowLib: (state, arrow) => {
         arrow.push('off')
+        arrow.push(false)
         state.arrowLib.push(arrow)
     },
     deleteArrow: (state, arrowId) => {
         const arrow = arrowId.split('to')
-        state.arrowLib.forEach((ar, index) => {
+        state.arrowLib = state.arrowLib.map((ar, index) => {
             if(ar[0] == arrow[0] && ar[1] == arrow[1]) {
-                state.arrowLib.splice(index,1)
+                return [ar[0], ar[1], 'deleted', ar[3]]
+            } else {
+                return ar
             }
         })
     },
@@ -71,9 +74,19 @@ export const mutations = {
         state.arrowLib = state.arrowLib.map((arrow) => {
             const id = arrow[0] + 'to' + arrow[1]
             if(id === arrowId || arrowId == 'any') {
-                return [arrow[0], arrow[1], ev]
+                return [arrow[0], arrow[1], ev, arrow[3]]
             } else {
                 return arrow
+            }
+        })
+    },
+    recreateArrow: (state, arrowId) => {
+        const arrow = arrowId.split('to')
+        state.arrowLib = state.arrowLib.map((ar, index) => {
+            if(ar[0] == arrow[0] && ar[1] == arrow[1]) {
+                return [ar[0], ar[1], 'recreated', ar[3]]
+            } else {
+                return ar
             }
         })
     }
