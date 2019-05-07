@@ -58,7 +58,11 @@ export default {
             },
             isDragging: false,
             isTyping: false,
-            isAligning: false
+            isAligning: false,
+            dragOrigins: {
+                X: 0,
+                Y: 0
+            }
         }
     },
     computed: {
@@ -94,9 +98,13 @@ export default {
         },
         drag(e) {
             if(e.buttons && !this.resizing.active && !this.isTyping && (this.isSelected || this.newPiece)) {
-                this.isDragging = true
-                this.$refs.component.style.top = `${e.clientY - this.$refs.component.offsetHeight/2 - 65 + window.scrollY}px`
-                this.$refs.component.style.left = `${e.clientX - this.$refs.component.offsetWidth/2 - this.toolsPanelWidth + window.scrollX}px`
+                if(!this.isDragging) {
+                    this.isDragging = true
+                    this.dragOrigins.Y = e.clientY - this.$refs.component.getBoundingClientRect().top
+                    this.dragOrigins.X = e.clientX - this.$refs.component.getBoundingClientRect().left
+                }
+                this.$refs.component.style.top = `${e.clientY - this.dragOrigins.Y - 65 + window.scrollY}px`
+                this.$refs.component.style.left = `${e.clientX - this.dragOrigins.X - this.toolsPanelWidth + window.scrollX}px`
                 this.emmitEventToLinkedArrows('drag')
                 this.$store.commit('emmitEventToIndex', 'drag')
             }

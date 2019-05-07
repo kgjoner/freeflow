@@ -505,8 +505,8 @@ export default {
             } else if (value === 'copy') {
                 const shape = this.currentEl.classList[1]
                 const e = {
-                    clientX: this.currentEl.getBoundingClientRect().right,
-                    clientY: this.currentEl.getBoundingClientRect().bottom
+                    clientX: this.currentEl.getBoundingClientRect().right + window.ScrollX,
+                    clientY: this.currentEl.getBoundingClientRect().bottom + window.ScrollY
                 }
                 this.addComponent(e, shape, true)
                 this.$store.commit('clearEvent');
