@@ -6,9 +6,10 @@
                 <b-form-input type="number" id="canvas-height" v-model="canvas.height" :formatter="checkCanvasSize" lazy-formatter></b-form-input>
         </div>
         <div class="build-site" ref="buildSite" :style="`height: ${canvas.height}px; width: ${canvas.width}px;`">
-            <div v-show="$store.state.components.makingArrow" class="making-info">From?</div>
-            <div v-show="$store.state.components.makingArrow && $store.state.components.arrowFrom" class="making-info">To?</div>
-            <div v-show="$store.state.components.aligning" class="making-info">Align with?</div>
+            <div v-show="$store.state.components.makingArrow" class="making-info" style="left: calc(50vw + 170px - 20px);">From?</div>
+            <div v-show="$store.state.components.makingArrow && $store.state.components.arrowFrom" class="making-info"
+                style="left: calc(50vw + 170px - 10.7px);">To?</div>
+            <div v-show="$store.state.components.aligning" class="making-info" style="left: calc(50vw + 170px - 35.8px);">Align with?</div>
             <h2 v-show="$store.state.components.quantity == 0">Drag and drop a shape here!</h2>
         </div>
         <aside class="tools">
@@ -253,8 +254,8 @@ export default {
                 propsData: {
                     id: this.$store.getters['components/nextId'],
                     shape,
-                    Xpos: e.clientX - this.props.width/2 - 340 + window.scrollX,
-                    Ypos: e.clientY - this.props.height/2 - 65 + window.scrollY,
+                    Xpos: e.pageX - this.props.width/2 - 340,
+                    Ypos: e.pageY - this.props.height/2 - 65,
                     props: this.props,
                     isCopy,
                     $store: this.$store
@@ -523,7 +524,8 @@ export default {
                     window.scrollTo(window.scrollX + 5, window.scrollY)
                 } else if (this.currentEl.getBoundingClientRect().bottom > window.innerHeight) {
                     window.scrollTo(window.scrollX, window.scrollY + 5)
-                } else if (this.currentEl.getBoundingClientRect().left < 340) {
+                } else if (this.currentEl.getBoundingClientRect().left < 340 &&
+                    !this.currentEl.classList.contains('new-piece')) {
                     window.scrollTo(window.scrollX - 5, window.scrollY)
                 } else if (this.currentEl.getBoundingClientRect().top < 65) {
                     window.scrollTo(window.scrollX, window.scrollY - 5)
@@ -644,8 +646,8 @@ input[type=number]::-webkit-outer-spin-button
     padding: 5px 10px;
     border-radius: 4px;
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-    position: absolute;
-    top: 10px;
+    position: fixed;
+    top: 75px;
     z-index: 50;
 }
 

@@ -121,14 +121,14 @@ export default {
                 const isLocked = this.$refs.component.getAttribute('kg-lock-aspect')
 
                 if(dirX === 'right') {
-                    width = Math.max(e.pageX - this.$refs.component.getBoundingClientRect().left, 30)
+                    width = Math.max(e.clientX - this.$refs.component.getBoundingClientRect().left, 30)
                 } else {
-                    width = Math.max(this.$refs.component.getBoundingClientRect().right - e.pageX, 30)
+                    width = Math.max(this.$refs.component.getBoundingClientRect().right - e.clientX, 30)
                 }
                 if(dirY === 'bottom') {
-                    height = Math.max(e.pageY - this.$refs.component.getBoundingClientRect().top + window.scrollY, 30)
+                    height = Math.max(e.clientY - this.$refs.component.getBoundingClientRect().top, 30)
                 } else {
-                    height = Math.max(this.$refs.component.getBoundingClientRect().bottom - e.pageY, 30)
+                    height = Math.max(this.$refs.component.getBoundingClientRect().bottom - e.clientY, 30)
                 }
 
                 if(isLocked !== 'false') {
@@ -141,14 +141,14 @@ export default {
 
                 this.$refs.component.style.width = width + 'px';
                 if(dirX == 'left' && parseInt(elStyle.getPropertyValue('width')) > 30) {
-                    const left = this.$refs.component.getBoundingClientRect().left
+                    const left = this.$refs.component.getBoundingClientRect().left + window.scrollX
                     const truePageX = left + (originalWidth - width)
                     this.$refs.component.style.left = `${truePageX - this.toolsPanelWidth}px`
                 }
 
                 this.$refs.component.style.height = height + 'px';
                 if(dirY == 'top' && parseInt(elStyle.getPropertyValue('height')) > 30) {
-                    const top = this.$refs.component.getBoundingClientRect().top
+                    const top = this.$refs.component.getBoundingClientRect().top + window.scrollY
                     const truePageY = top + (originalHeight - height)
                     this.$refs.component.style.top = `${truePageY - 65}px`
                 }
@@ -253,8 +253,8 @@ export default {
             this.emmitEventToLinkedArrows('drag')
         },
         getMiddlePoint(el) {
-            const left = el.getBoundingClientRect().left
-            const top = el.getBoundingClientRect().top
+            const left = el.getBoundingClientRect().left + window.scrollX
+            const top = el.getBoundingClientRect().top + window.scrollY
             const width = parseInt(window.getComputedStyle(el, null).getPropertyValue('width'));
             const height = parseInt(window.getComputedStyle(el, null).getPropertyValue('height'));
         

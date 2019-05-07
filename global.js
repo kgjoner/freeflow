@@ -7,8 +7,8 @@ export function buildArrow (id, from, to) {
     const toolsPanelWidth = document.getElementsByClassName('tools')[0].getBoundingClientRect().width
 
     function getMiddlePoint(el) {
-        const left = el.getBoundingClientRect().left
-        const top = el.getBoundingClientRect().top
+        const left = el.getBoundingClientRect().left + window.scrollX
+        const top = el.getBoundingClientRect().top + window.scrollY
         const width = parseInt(window.getComputedStyle(el, null).getPropertyValue('width'));
         const height = parseInt(window.getComputedStyle(el, null).getPropertyValue('height'));
     
@@ -22,8 +22,8 @@ export function buildArrow (id, from, to) {
         arrowEl.style.width = `${2*missRange + Math.max(Math.abs(to.xPos - from.xPos), 2)}px`
         arrowEl.style.height = `${2*missRange + Math.max(Math.abs(to.yPos - from.yPos), 2)}px`
     
-        arrowEl.style.left = `${Math.min(to.xPos, from.xPos) - missRange - toolsPanelWidth + window.scrollX}px`
-        arrowEl.style.top = `${Math.min(to.yPos, from.yPos) - missRange - 65 + window.scrollY}px`
+        arrowEl.style.left = `${Math.min(to.xPos, from.xPos) - missRange - toolsPanelWidth}px`
+        arrowEl.style.top = `${Math.min(to.yPos, from.yPos) - missRange - 65}px`
     }
 
     const fromEl = document.getElementById(from)

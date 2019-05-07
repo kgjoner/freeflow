@@ -164,8 +164,8 @@ export default {
             this.checkHeadPosition(1)
         },
         getMiddlePoint(el, computeSize) {
-            const left = el.getBoundingClientRect().left
-            const top = el.getBoundingClientRect().top
+            const left = el.getBoundingClientRect().left + window.scrollX
+            const top = el.getBoundingClientRect().top + window.scrollY
             const width = parseInt(window.getComputedStyle(el, null).getPropertyValue('width'));
             const height = parseInt(window.getComputedStyle(el, null).getPropertyValue('height'));
 
@@ -185,8 +185,8 @@ export default {
             this.$refs.outerBox.style.width = `${2*this.missRange + Math.max(Math.abs(to.xPos - from.xPos), 2)}px`
             this.$refs.outerBox.style.height = `${2*this.missRange + Math.max(Math.abs(to.yPos - from.yPos), 2)}px`
 
-            this.$refs.outerBox.style.left = `${Math.min(to.xPos, from.xPos) - this.missRange - this.toolsPanelWidth + window.scrollX}px`
-            this.$refs.outerBox.style.top = `${Math.min(to.yPos, from.yPos) - this.missRange - 65 + window.scrollY}px`
+            this.$refs.outerBox.style.left = `${Math.min(to.xPos, from.xPos) - this.missRange - this.toolsPanelWidth}px`
+            this.$refs.outerBox.style.top = `${Math.min(to.yPos, from.yPos) - this.missRange - 65}px`
         },
         setPosition(mode, Xperc = this.labelPos.x, Yperc = this.labelPos.y) {
             const height = parseInt(window.getComputedStyle(this.$refs.mode, null).getPropertyValue('height'));
