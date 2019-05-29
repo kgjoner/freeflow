@@ -47,7 +47,8 @@ export default {
 .navbar {
     display: flex;
     justify-content: flex-end;
-    background: rgb(196, 196, 196);
+    /* background: rgb(196, 196, 196); */
+    background: rgb(150, 150, 150);
     margin-bottom: 0;
     padding-top: 0;
     padding-bottom: 0;
@@ -67,7 +68,7 @@ export default {
 }
 
 .navbar li:hover, .navbar li.active {
-    background: orange;
+    background: var(--off-tools);
     color: #f2f2f2;
 }
 

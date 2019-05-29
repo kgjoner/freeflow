@@ -14,8 +14,8 @@
         </div>
         <aside class="tools">
             <b-tabs class="shapes mb-4" v-model="tabIndex">
-                <b-tab title="Build" class="mt-3 ml-3" @click="tabIndex = 0">
-                    <div class="shape-tools mt-4 ml-1 mr-4">
+                <b-tab title="Build" class="mt-4 ml-3" @click="tabIndex = 0">
+                    <div class="shape-tools ml-1 mr-4">
                         <div>
                             <button class="terminator-tool" @mousedown="e => addComponent(e, 'terminator')"
                                 :disabled="isMakingArrow"></button>
@@ -48,7 +48,9 @@
                         </div>
                     </div>
                     <div class="arrow-tool mb-5">
-                        <h4 class="mt-4 ml-3">Arrow</h4>
+                        <div class="default-msg mb-2 mt-4 ml-3">
+                            <p>Arrow</p>
+                        </div>
                         <input type="text" class="arrow-label mt-2 ml-4 interactor" placeholder="No label" v-model="arrow.label" 
                             @focus="activateTyping" :disabled="isMakingArrow" @change="changeArrow(arrow.mode)">
                         <button v-if="isArrowSelected" class="make-arrow mt-2 ml-2 interactor" @click="changeArrow(arrow.mode)">Update</button>
@@ -505,8 +507,8 @@ export default {
             } else if (value === 'copy') {
                 const shape = this.currentEl.classList[1]
                 const e = {
-                    clientX: this.currentEl.getBoundingClientRect().right + window.ScrollX,
-                    clientY: this.currentEl.getBoundingClientRect().bottom + window.ScrollY
+                    pageX: this.currentEl.getBoundingClientRect().right + window.scrollX,
+                    pageY: this.currentEl.getBoundingClientRect().bottom + window.scrollY
                 }
                 this.addComponent(e, shape, true)
                 this.$store.commit('clearEvent');
@@ -635,9 +637,9 @@ input[type=number]::-webkit-outer-spin-button
 }
 
 .build .canvas-size input:focus {
-    border-color: var(--theme-color-2);
+    border-color: var(--off-tools);
     border-width: 1.5px;
-    box-shadow: 0 0 2px 0 var(--theme-color-2);
+    box-shadow: 0 0 2px 0 var(--off-tools);
 }
 
 .build-site .making-info {
@@ -695,6 +697,7 @@ ul.nav-tabs {
     justify-content: space-between;
     flex-wrap: wrap;
     max-width: 100%;
+    margin-top: 35px;
 }
 
 .tools .shape-tools button {

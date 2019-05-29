@@ -220,7 +220,6 @@ export default {
             const linkedArrows = this.$store.state.components.arrowLib.filter(pair => pair.indexOf(this.id) !== -1)
             linkedArrows.forEach(arrow => {
                 const id = arrow[0] + 'to' + arrow[1]
-                console.log(arrow[2])
                 if(arrow[2] !== 'deleted') {
                     buildArrow(id, arrow[0], arrow[1])
                     this.$store.commit('components/emmitEventToArrow', [id, ev])
@@ -305,7 +304,7 @@ export default {
 
     position: absolute;
     cursor: grab;
-    z-index: 1;
+    z-index: 2;
 }
 
 .component.grabbing {

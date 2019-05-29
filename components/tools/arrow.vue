@@ -161,7 +161,7 @@ export default {
             this.$refs.mainBody.classList.add(`bd-${this.direction.horizontal}`)
             this.$refs.label.style[this.reverseDirection.horizontal] = `${this.sizes.fromEl.width/2 + 10}px`
 
-            this.checkHeadPosition(1)
+            this.checkHeadPosition(this.setPosition(this.updateDirection(this.whetherStraightArrows(1))))
         },
         getMiddlePoint(el, computeSize) {
             const left = el.getBoundingClientRect().left + window.scrollX
@@ -448,6 +448,10 @@ export default {
     z-index: 0;
 
     padding: 20px;
+}
+
+.arrow.selected {
+    z-index: 1;
 }
 
 .arrow-head {
