@@ -1,9 +1,11 @@
 # Free Flow
 
-> ./pages/Index.vue > Main file.
-> ./components/build > Folder with the two app major components: blocks and arrows.
-> ./store/index.js > General vuex variables.
-> ./store/components > Variables used to control the reactivity of blocks and arrows as well as to make them communicate with the main file.
+> It is a simple static app, no backend needs. 
+
+./pages/Index.vue > Main file.
+./components/build > Folder with the two app major components: blocks and arrows.
+./store/index.js > General vuex variables.
+./store/components > Variables used to control the reactivity of blocks and arrows as well as to make them communicate with the main file.
 
 It is a simple static app, no backend needs. 
 
