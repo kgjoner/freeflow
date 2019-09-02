@@ -143,8 +143,8 @@
 </template>
 
 <script>
-import Constructor from '@/components/tools/component'
-import ArrowModel from '@/components/tools/arrow'
+import Constructor from '@/components/build/component'
+import ArrowModel from '@/components/build/arrow'
 import domtoimage from 'dom-to-image'
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { centralizeTextVertically } from '../global'

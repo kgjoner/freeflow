@@ -1,5 +1,3 @@
-
-
 export function buildArrow (id, from, to) {
 
     const missRange = 20;
