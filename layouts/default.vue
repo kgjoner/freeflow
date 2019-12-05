@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="layout">
     <Navbar />
     <nuxt />
   </div>
@@ -10,7 +10,7 @@ import Navbar from '@/components/nav'
 
 export default {
     name: 'default',
-    components: { Navbar },
+    components: { Navbar }
 }
 </script>
 
@@ -25,6 +25,14 @@ html {
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   box-sizing: border-box;
+}
+
+.layout {
+  display: grid;
+  grid-template-rows: 65px 1fr;
+  grid-template-areas: 
+  'header'
+  'build'
 }
 
 ::-webkit-scrollbar {

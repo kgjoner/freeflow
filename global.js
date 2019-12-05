@@ -43,4 +43,16 @@ export function centralizeTextVertically(el, target = '.real-text') {
     }
 }
 
+function rgbToHex(rgb) {
+    rgb = rgb.split('rgb(').join('').split(')').join('').split(', ')
+    var hex = rgb.map(v => {
+        let hv = Number(v).toString(16);
+        if (hv.length < 2) {
+            hv = "0" + hv;
+        }
+        return hv
+    })
+    return "#" + hex.join('');
+}
+
 export default {buildArrow, centralizeTextVertically}

@@ -1,9 +1,8 @@
 <template>
     <ul class="navbar">
-        <!-- <li ref="home"><nuxt-link to="/">Home</nuxt-link></li> -->
-        <!-- <li ref="posts"><nuxt-link to="/posts/1">Post</nuxt-link></li> -->
-        <li ref="build"><nuxt-link to="/">
-            <span>Free Flow</span></nuxt-link></li>
+        <li ref="build">
+            <nuxt-link to="/"><span>Free Flow</span></nuxt-link>
+        </li>
     </ul>
 </template>
 
@@ -25,17 +24,6 @@ export default {
             }
         }
     },
-    // watch: {
-    //     $route(to, from) {
-    //         const ref = from.fullPath.match(/(\/)(\w+)(\/?)/)
-    //         if (!ref) {
-    //             this.$refs.home.classList.remove('active')
-    //         } else {
-    //             this.$refs[ref[2]].classList.remove('active')
-    //         }
-    //         this.$refs[this.active].classList.add('active')
-    //     }
-    // },
     mounted() {
         this.$refs[this.active].classList.add('active')
     }
@@ -45,6 +33,7 @@ export default {
 <style>
 
 .navbar {
+    grid-area: header;
     display: flex;
     justify-content: flex-end;
     /* background: rgb(196, 196, 196); */
