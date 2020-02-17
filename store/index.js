@@ -3,6 +3,8 @@ export const state = () => ({
     isAnyTyping: false,
     aligning: false,
     alignWith: null,
+    toolsPanelWidth: 340,
+    headerHeight: 65,
 })
 
 export const mutations = {

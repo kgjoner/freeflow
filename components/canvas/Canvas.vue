@@ -29,7 +29,9 @@ export default {
     computed: {
         ...mapState({
             canvas: state => state.canvas,
-            event: state => state.mailer.canvas
+            event: state => state.mailer.canvas,
+            toolsPanelWidth: state => state.toolsPanelWidth,
+            headerHeight: state => state.headerHeight
         }),
         ...mapGetters({
             numberOfBlocks: 'block/quantity'
@@ -63,7 +65,7 @@ export default {
             instance.$mount('#addHere')
         },
         insertToCanvas() {
-            const isTargetOnCanvas = this.$store.state.block.blocks[this.storedId].centerPos.x > 340
+            const isTargetOnCanvas = this.$store.state.block.blocks[this.storedId].centerPos.x > this.toolsPanelWidth
             const targetBlock = document.getElementById(this.storedId)
             document.querySelector('.build').removeChild(targetBlock)
             if(isTargetOnCanvas) {
@@ -97,9 +99,11 @@ export default {
                 const scrollTop = this.$refs.canvasBox.scrollTop
                 const scrollLeft = this.$refs.canvasBox.scrollLeft
                 
-                if(movement.x > 0 && this.currentEl.getBoundingClientRect().right + scrollLeft - 340 > this.canvas.width) {
+                if(movement.x > 0 && this.currentEl.getBoundingClientRect().right + scrollLeft 
+                    - this.toolsPanelWidth > this.canvas.width) {
                     this.$store.dispatch('canvas/setSize', {dimension: 'width', scroll: scrollLeft})
-                } else if (movement.y > 0 && this.currentEl.getBoundingClientRect().bottom + scrollTop - 65 > this.canvas.height) {
+                } else if (movement.y > 0 && this.currentEl.getBoundingClientRect().bottom + scrollTop 
+                    - this.headerHeight > this.canvas.height) {
                     this.$store.dispatch('canvas/setSize', {dimension: 'height', scroll: scrollTop})
                 }
 
@@ -107,10 +111,10 @@ export default {
                     this.$refs.canvasBox.scroll(scrollLeft + 5, scrollTop)
                 } else if (movement.y > 0 && this.currentEl.getBoundingClientRect().bottom > innerHeight) {
                     this.$refs.canvasBox.scroll(scrollLeft, scrollTop + 5)
-                } else if (movement.x < 0 && this.currentEl.getBoundingClientRect().left < 340 &&
+                } else if (movement.x < 0 && this.currentEl.getBoundingClientRect().left < this.toolsPanelWidth &&
                     !this.currentEl.classList.contains('new-piece')) {
                     this.$refs.canvasBox.scroll(scrollLeft - 5, scrollTop)
-                } else if (movement.y < 0 && this.currentEl.getBoundingClientRect().top < 65) {
+                } else if (movement.y < 0 && this.currentEl.getBoundingClientRect().top < this.headerHeight) {
                     this.$refs.canvasBox.scroll(scrollLeft, scrollTop - 5)
                 }
             }

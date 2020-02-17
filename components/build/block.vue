@@ -41,6 +41,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
 import { centralizeTextVertically } from "../../global"
 import { fas } from '@fortawesome/free-solid-svg-icons'
 
@@ -99,10 +100,10 @@ export default {
         fas() {
             return fas
         },
-        toolsPanelWidth() {
-            const toolsPanel = document.getElementsByClassName('tools')[0]
-            return toolsPanel.getBoundingClientRect().width
-        }
+        ...mapState({
+            toolsPanelWidth: state => state.toolsPanelWidth,
+            headerHeight: state => state.headerHeight
+        })
     },
     methods: {
         select() {
@@ -147,9 +148,9 @@ export default {
                 }
                 const correction = this.newPiece ? 0 : this.toolsPanelWidth
                 const limitedClientX = Math.min(Math.max(e.clientX, correction), window.innerWidth - 15)
-                const limitedClientY = Math.min(Math.max(e.clientY, 65), window.innerHeight - 15)
+                const limitedClientY = Math.min(Math.max(e.clientY, this.headerHeight), window.innerHeight - 15)
                 const canvas = this.newPiece ? document.querySelector('.build') : document.querySelector('.canvas-box')
-                this.$refs.block.style.top = `${limitedClientY - this.dragOrigins.Y - 65 + canvas.scrollTop}px`
+                this.$refs.block.style.top = `${limitedClientY - this.dragOrigins.Y - this.headerHeight + canvas.scrollTop}px`
                 this.$refs.block.style.left = `${limitedClientX - this.dragOrigins.X - correction + canvas.scrollLeft}px`
                 this.updateCenterPos()
 
@@ -226,7 +227,7 @@ export default {
                 if(dirY == 'top' && parseInt(elStyle.getPropertyValue('height')) > 30) {
                     const top = this.$refs.block.getBoundingClientRect().top + window.scrollY
                     const truePageY = top + (previousHeight - height)
-                    this.$refs.block.style.top = `${truePageY - 65}px`
+                    this.$refs.block.style.top = `${truePageY - this.headerHeight}px`
                 }
 
                 if(this.shape === 'data') {
@@ -289,7 +290,7 @@ export default {
         },
         copyElement() {
             const centerPos = {
-                x: this.$refs.block.getBoundingClientRect().right + window.scrollX - 340,
+                x: this.$refs.block.getBoundingClientRect().right + window.scrollX - this.toolsPanelWidth,
                 y: this.$refs.block.getBoundingClientRect().bottom + window.scrollY
             }
             this.$store.dispatch('block/prepBlockToAdd', {shape: this.shape, copyId: this.id, centerPos})
@@ -351,11 +352,11 @@ export default {
         },
         Ypos(value) {
             if(this.isDragging) return
-            this.$refs.block.style.top = `${value - this.$refs.block.offsetHeight/2 - 65}px`
+            this.$refs.block.style.top = `${value - this.$refs.block.offsetHeight/2 - this.headerHeight}px`
         }
     },
     mounted() {
-        this.$refs.block.style.top = `${this.Ypos - this.styleProps.height/2 - 65}px`;
+        this.$refs.block.style.top = `${this.Ypos - this.styleProps.height/2 - this.headerHeight}px`;
         this.$refs.block.style.left = `${this.Xpos - this.styleProps.width/2}px`;
         this.$refs.shape.style.backgroundColor = this.styleProps.backgroundColor
         this.$refs.shape.style.border = `${this.styleProps.borderWidth} ${this.styleProps.borderStyle} ${this.styleProps.borderColor}`;

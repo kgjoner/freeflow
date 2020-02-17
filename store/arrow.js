@@ -83,27 +83,25 @@ export const actions = {
         }
     },
     prepArrowToAdd: ({ commit, state, dispatch }, id) => {
-        dispatch('calculateArrowVariants', {id})
-            .then(_ => {
-                const arrow = {
-                    id,
-                    from: state.arrowMakerMode.from,
-                    to: state.arrowMakerMode.to,
-                    label: state.arrowMakerMode.label,
-                    variant: state.variants[0],
-                    variantMode: 0,
-                    status: 'none' 
-                }
-                commit('addArrow', arrow)
-            })
+        const arrow = {
+            id,
+            from: state.arrowMakerMode.from,
+            to: state.arrowMakerMode.to,
+            label: state.arrowMakerMode.label,
+            variant: '',
+            variantMode: 0,
+            status: 'none' 
+        }
+        commit('addArrow', arrow)
+        dispatch('updateArrowVariant', id)
     },
     calculateArrowVariants: ({ commit, rootState }, {id, mode}) => {
         const [from, to] = id.split('to')
         const fromPoint = rootState.block.blocks[from].centerPos
         const toPoint = rootState.block.blocks[to].centerPos
 
-        const isFromLeftToRight = fromPoint.x < toPoint.x
-        const isFromTopToBottom = fromPoint.y < toPoint.y
+        const isFromLeftToRight = fromPoint.x <= toPoint.x
+        const isFromTopToBottom = fromPoint.y <= toPoint.y
 
         const buildVariant = {
             0: () => `${isFromLeftToRight ? 'right' : 'left'}-${isFromTopToBottom ? 'top' : 'bottom'}`,

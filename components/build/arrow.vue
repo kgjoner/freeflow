@@ -7,13 +7,14 @@
             <div v-show="variant.match(/[|_]/)" 
                 class="aditional-body" :class="variant.split(/[|_]/)[1]"></div>
             <div class="arrow-head" ref="head"></div>
-            <div class="arrow-label" ref="label"
-            @mousemove="e => dragLabel(e)" @mousedown="selectByLabel()">{{label}}</div>
+            <div class="arrow-label" ref="label" @mousemove="e => dragLabel(e)">{{label}}</div>
         </div>
     </div>
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
     name: "Arrow",
     props: ['index', '$store'],
@@ -79,10 +80,10 @@ export default {
                 }
             }
         },
-        toolsPanelWidth() {
-            const toolsPanel = document.getElementsByClassName('tools')[0]
-            return toolsPanel.getBoundingClientRect().width
-        }
+        ...mapState({
+            toolsPanelWidth: state => state.toolsPanelWidth,
+            headerHeight: state => state.headerHeight
+        })
     },
     methods: {
         select(e) {
@@ -123,7 +124,7 @@ export default {
                 validClick = upperYLimitClick || middleClick ||lowerYLimitClick
             }
 
-            if(validClick) {
+            if(validClick || e.target === this.$refs.label) {
                 this.$store.dispatch('avaliateSelection', this.id)
                 this.$store.dispatch('arrow/alterArrow', { id: 'any', alterations: { status: 'none' }})
             } else {
@@ -134,9 +135,6 @@ export default {
                     this.$store.dispatch('arrow/alterArrow', { id: this.id, alterations: { status: 'none' }})
                 }
             }
-        },
-        selectByLabel() {
-            this.$store.dispatch('avaliateSelection', this.id)
         },
         buildArrow() {
             const fromPoint = this.$store.state.block.blocks[this.from].centerPos
@@ -173,7 +171,7 @@ export default {
                 top = Math.max(from.y - this.sizes.fromEl.height/2 - correction, to.y)
             }
             this.$refs.outerBox.style.left = `${left - this.missRange - this.toolsPanelWidth}px`
-            this.$refs.outerBox.style.top = `${top - this.missRange - 65}px`
+            this.$refs.outerBox.style.top = `${top - this.missRange - this.headerHeight}px`
         },
         setLabelPosition(mode, Xperc = this.labelPos.x, Yperc = this.labelPos.y) {
             const height = parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('height'));
@@ -288,7 +286,7 @@ export default {
         },
         checkSelection(e) {
             const interactors = Array.from(document.getElementsByClassName('interactor'))
-            if(this.isSelected && interactors.indexOf(e.target) === -1) {
+            if(this.isSelected && interactors.indexOf(e.target) === -1 && e.target !== this.$refs.label) {
                 if((e.clientX > this.$refs.outerBox.getBoundingClientRect().right + this.missRange) ||
                 (e.clientX < this.$refs.outerBox.getBoundingClientRect().left - this.missRange) ||
                 (e.clientY > this.$refs.outerBox.getBoundingClientRect().bottom + this.missRange) ||
