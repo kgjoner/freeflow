@@ -60,6 +60,7 @@
 
 <script>
 import { fas } from '@fortawesome/free-solid-svg-icons'
+import { mapState } from 'vuex'
 import { centralizeTextVertically } from '@/global'
 
 export default {
@@ -81,22 +82,18 @@ export default {
         }
     },
     computed: {
-        selectedEl() {
-            return this.$store.state.selected
-        },
+        ...mapState({
+            selectedEl: state => state.selected,
+            propsDefault: state => state.block.defaultStyle,
+            builderEvent: state => state.mailer.builder
+        }),
         blockEl() {
-            const selected = this.$store.state.selected
+            const selected = this.selectedEl
             if(selected && !selected.toString().includes('to')) {
                 return document.getElementById(selected)
             } else {
                 return ''
             }
-        },
-        propsDefault() {
-            return this.$store.state.block.defaultStyle
-        },
-        fas() {
-            return fas
         },
         selectedShape() {
             if(this.blockEl) {
@@ -104,8 +101,8 @@ export default {
             }
             return 'none'
         },
-        builderEvent() {
-            return this.$store.state.mailer.builder
+        fas() {
+            return fas
         },
     }, 
     methods: {

@@ -6,11 +6,14 @@
                 style="left: calc(50vw + 170px - 10.7px);">To?</div>
             <div v-show="$store.state.aligning" class="making-info" style="left: calc(50vw + 170px - 35.8px);">Align with?</div>
             <h2 v-show="numberOfBlocks == 0">Drag and drop a shape here!</h2>
+            <p>{{numberOfBlocks}}</p>
         </div>
     </div>
 </template>
 
 <script>
+import { mapState, mapGetters } from 'vuex'
+
 import BlockModel from '@/components/build/block'
 import ArrowModel from '@/components/build/arrow'
 
@@ -24,15 +27,13 @@ export default {
         }
     },
     computed: {
-        canvas() {
-            return this.$store.state.canvas
-        },
-        event() {
-            return this.$store.state.mailer.canvas
-        },
-        numberOfBlocks() {
-            return this.$store.getters['block/quantity']
-        },
+        ...mapState({
+            canvas: state => state.canvas,
+            event: state => state.mailer.canvas
+        }),
+        ...mapGetters({
+            numberOfBlocks: 'block/quantity'
+        }),
         currentEl() {
             const selected = this.$store.state.selected
             if(selected && document) {
@@ -85,14 +86,17 @@ export default {
                     $store: this.$store
                 }
                 this.create(whichComponent, propsData)
+                
             } else if (value.includes('remove:block')) {
                 const id = value.match(/\((.+)\)/)[1]
                 this.removeBlock(id)
+
             } else if (value.includes('drag') && this.currentEl) {
                 const data = value.match(/\((.+)\)/)
                 const movement = data ? JSON.parse(data[1]) : { x: 1, y: 1 }
                 const scrollTop = this.$refs.canvasBox.scrollTop
-				const scrollLeft = this.$refs.canvasBox.scrollLeft
+                const scrollLeft = this.$refs.canvasBox.scrollLeft
+                
                 if(movement.x > 0 && this.currentEl.getBoundingClientRect().right + scrollLeft - 340 > this.canvas.width) {
                     this.$store.dispatch('canvas/setSize', {dimension: 'width', scroll: scrollLeft})
                 } else if (movement.y > 0 && this.currentEl.getBoundingClientRect().bottom + scrollTop - 65 > this.canvas.height) {

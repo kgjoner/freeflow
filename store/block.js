@@ -81,7 +81,10 @@ export const actions = {
                 const newHeight = block.style.width*block.style.aspect;
                 commit('changeBlockStyle', { id, whichStyle: 'height', value: newHeight });
             }
-            if(whichStyle ==='aspect') {
+            if(whichStyle === 'aspect') { 
+                //aspect is only updated when user wants to switch isLocked status; 
+                //otherwise, it won't be used. So despite aspect had been chosen as
+                //payload by the algorithm, user had actually aimed isLocked:
                 commit('changeBlockStyle', { id, whichStyle: 'isLocked', value: !block.style.isLocked })
             }
         } else {

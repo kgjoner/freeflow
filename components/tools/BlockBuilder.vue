@@ -11,6 +11,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
     name: 'BlockBuilder',
     data: function() {
@@ -26,9 +28,9 @@ export default {
         }
     },
     computed: {
-        isMakingArrow() {
-            return this.$store.state.arrow.arrowMakerMode.on
-        },
+        ...mapState('arrow', {
+            isMakingArrow: state => state.arrowMakerMode.on
+        })
     },
     methods: {
         triggerBlockCreatingEvents(e, shape) {

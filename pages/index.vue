@@ -19,6 +19,9 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import domtoimage from 'dom-to-image'
+
 import CanvasSizeInput from '@/components/canvas/CanvasSizeInput'
 import Canvas from '@/components/canvas/Canvas'
 import BlockBuilder from '@/components/tools/BlockBuilder'
@@ -26,12 +29,6 @@ import BlockPropertiesSetup from '@/components/tools/BlockPropertiesSetup'
 import ArrowBuilder from '@/components/tools/ArrowBuilder'
 import ArrowVariantSetup from '@/components/tools/ArrowVariantSetup'
 
-import Constructor from '@/components/build/block'
-import ArrowModel from '@/components/build/arrow'
-import domtoimage from 'dom-to-image'
-import { centralizeTextVertically } from '../global'
-
-import Vue from 'vue'
 
 export default {
     name: "Build",
@@ -43,21 +40,17 @@ export default {
         }
     },
     computed: {
-        selectedEl() {
-            return this.$store.state.selected
-        },
+        ...mapState({
+            selectedEl: state => state.selected,
+            isAnyTyping: state => state.isAnyTyping,
+            isMakingArrow: state => state.arrow.arrowMakerMode.on
+        }),
         isArrowSelected() {
             if(this.currentEl) {
                 return this.currentEl.id.toString().includes('to')
             } else {
                 return false
             }
-        },
-        isAnyTyping() {
-            return this.$store.state.isAnyTyping
-        },
-        isMakingArrow() {
-            return this.$store.state.arrow.arrowMakerMode.on
         },
     },
     methods: {

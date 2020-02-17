@@ -54,7 +54,6 @@ export default {
     watch: {
         arrowEl(value) {
             if(value) this.$store.dispatch('arrow/calculateArrowVariants', {id: this.arrowEl.id})
-            console.log(this.storedArrow.variant)
             this.arrow.variant = value ? this.storedArrow.variant : 1
         }
     }

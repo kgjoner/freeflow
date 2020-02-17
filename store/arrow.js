@@ -97,39 +97,6 @@ export const actions = {
                 commit('addArrow', arrow)
             })
     },
-    deleteArrow: ({ commit, state }, id) => {
-        state.arrows.some((arrow, index) => {
-            if(arrow.id == id) {
-                commit('alterArrow', { index, alterations: { label: '', variantMode: 0 }})
-                commit('deleteArrow', index)
-                return true
-            }
-        })
-    },
-    alterArrow: ({ commit, state }, { id, alterations }) => {
-        state.arrows.some((arrow, index) => {
-            if((arrow.id === id || id === 'any') 
-                && arrow.status !== 'deleted') {
-                commit('alterArrow', { index, alterations })
-                if(id !== 'any') return true
-            }
-        })
-    },
-    deleteArrowsLinkedToBlock: ({ commit, state }, blockId) => {
-        state.arrows.forEach((arrow, index) => {
-            if(arrow.from == blockId || arrow.to == blockId) {
-                commit('deleteArrow', index)
-            }
-        })
-    },
-    alterArrowsLinkedToBlock: ({ commit, state }, {blockId, status}) => {
-        state.arrows.forEach((arrow, index) => {
-            if((arrow.from == blockId || arrow.to == blockId)
-                && arrow.status !== 'deleted') {
-                commit('alterArrow', { index, alterations: { status } })
-            }
-        })
-    },
     calculateArrowVariants: ({ commit, rootState }, {id, mode}) => {
         const [from, to] = id.split('to')
         const fromPoint = rootState.block.blocks[from].centerPos
@@ -206,5 +173,38 @@ export const actions = {
                 return ''
             }
         }
+    },
+    deleteArrow: ({ commit, state }, id) => {
+        state.arrows.some((arrow, index) => {
+            if(arrow.id == id) {
+                commit('alterArrow', { index, alterations: { label: '', variantMode: 0 }})
+                commit('deleteArrow', index)
+                return true
+            }
+        })
+    },
+    alterArrow: ({ commit, state }, { id, alterations }) => {
+        state.arrows.some((arrow, index) => {
+            if((arrow.id === id || id === 'any') 
+                && arrow.status !== 'deleted') {
+                commit('alterArrow', { index, alterations })
+                if(id !== 'any') return true
+            }
+        })
+    },
+    deleteArrowsLinkedToBlock: ({ commit, state }, blockId) => {
+        state.arrows.forEach((arrow, index) => {
+            if(arrow.from == blockId || arrow.to == blockId) {
+                commit('deleteArrow', index)
+            }
+        })
+    },
+    alterArrowsLinkedToBlock: ({ commit, state }, {blockId, status}) => {
+        state.arrows.forEach((arrow, index) => {
+            if((arrow.from == blockId || arrow.to == blockId)
+                && arrow.status !== 'deleted') {
+                commit('alterArrow', { index, alterations: { status } })
+            }
+        })
     }
 }

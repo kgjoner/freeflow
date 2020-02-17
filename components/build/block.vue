@@ -56,8 +56,8 @@ export default {
                 dirX: '',
                 dirY: ''
             },
-            isDragging: false,
             isTyping: false,
+            isDragging: false,
             dragOrigins: {
                 X: 0,
                 Y: 0
@@ -146,16 +146,22 @@ export default {
                     this.dragOrigins.X = e.clientX - this.$refs.block.getBoundingClientRect().left
                 }
                 const correction = this.newPiece ? 0 : this.toolsPanelWidth
-                const mouseX = Math.min(Math.max(e.clientX, correction), window.innerWidth - 15)
-                const mouseY = Math.min(Math.max(e.clientY, 65), window.innerHeight - 15)
-                const canvas = document.querySelector('.canvas-box')
-                this.$refs.block.style.top = `${mouseY - this.dragOrigins.Y - 65 + canvas.scrollTop}px`
-                this.$refs.block.style.left = `${mouseX - this.dragOrigins.X - correction + canvas.scrollLeft}px`
+                const limitedClientX = Math.min(Math.max(e.clientX, correction), window.innerWidth - 15)
+                const limitedClientY = Math.min(Math.max(e.clientY, 65), window.innerHeight - 15)
+                const canvas = this.newPiece ? document.querySelector('.build') : document.querySelector('.canvas-box')
+                this.$refs.block.style.top = `${limitedClientY - this.dragOrigins.Y - 65 + canvas.scrollTop}px`
+                this.$refs.block.style.left = `${limitedClientX - this.dragOrigins.X - correction + canvas.scrollLeft}px`
                 this.updateCenterPos()
+
                 if(!this.newPiece) {
-                    const x = e.movementX || Math.sign(e.clientX - mouseX)
-                    const y = e.movementY || Math.sign(e.clientY - mouseY)
-                    const movement = {x, y}
+                    const movementOutCanvas = {
+                        x: Math.sign(e.clientX - limitedClientX),
+                        y: Math.sign(e.clientY - limitedClientY)
+                    }
+                    const movement = {
+                        x: movementOutCanvas.x || e.movementX,
+                        y: movementOutCanvas.y || e.movementY
+                    }
                     const json = JSON.stringify(movement)
                     this.$store.dispatch('mailer/sendMail', { to: 'canvas', content: `drag(${json})`})
                     this.updateLinkedArrowsStatus('drag')
@@ -249,7 +255,8 @@ export default {
             this.resizing.active = false;
             this.$refs.block.style.cursor = 'grab'
             if(this.newPiece) {
-                this.$refs.block.style.left = `${this.Xpos - this.$refs.block.offsetWidth/2 - this.toolsPanelWidth}px`
+                const canvas = document.querySelector('.canvas-box')
+                this.$refs.block.style.left = `${this.Xpos - this.$refs.block.offsetWidth/2 - this.toolsPanelWidth + canvas.scrollLeft}px`
                 setTimeout(() => {
                     this.$store.dispatch('mailer/sendMail', { to: 'canvas', content: 'drag'})
                     .then(_ => {
@@ -333,10 +340,10 @@ export default {
             if(value.includes('style')) {
                 const whichStyle = value.split(':')[1]
                 this.updateStyle(whichStyle)
+                this.$store.dispatch('block/clearEvent', this.id)
             } else if(value === 'destruction') {
                 this.$destroy()
             }
-            this.$store.dispatch('block/clearEvent', this.id)
         },
         Xpos(value) {
             if(this.isDragging) return

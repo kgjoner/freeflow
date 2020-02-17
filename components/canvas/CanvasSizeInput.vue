@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import { mapState } from 'vuex'
+
 export default {
 	name: "CanvasSizeInput",
 	data: function() {
@@ -25,12 +27,10 @@ export default {
 		}
 	},
 	computed: {
-		storedCanvasWidth() {
-			return this.$store.state.canvas.width
-		},
-		storedCanvasHeight() {
-			return this.$store.state.canvas.height
-		}
+		...mapState({
+			storedCanvasWidth: state => state.canvas.width,
+			storedCanvasHeight: state => state.canvas.height
+		})
 	},
 	methods: {
 		checkCanvasSize(newSize, dimension) {
