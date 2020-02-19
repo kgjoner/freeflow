@@ -20,35 +20,17 @@ export default {
     props: ['index', '$store'],
     data: function() {
         return {
-            direction: {
-                horizontal: '',
-                vertical: ''
-            },
-            reverseDirection: {
-                top: 'bottom',
-                bottom: 'top',
-                left: 'right',
-                right: 'left'
-            },
             labelPos: {
                 x: 0,
                 y: 0,
             },
-            missRange: 20,
             isDragging: false,
             isDeleted: false,
-            trueMode: '1',
         }
     },
     computed: {
         id() {
             return this.$store.state.arrow.arrows[this.index].id
-        },
-        from() {
-            return this.$store.state.arrow.arrows[this.index].from
-        },
-        to() {
-            return this.$store.state.arrow.arrows[this.index].to
         },
         label() {
             return this.$store.state.arrow.arrows[this.index].label
@@ -59,230 +41,34 @@ export default {
         straightMode() {
             return this.variant.split('!straight')[1]
         },
-        variantMode() {
-            return this.$store.state.arrow.arrows[this.index].variantMode
-        },
         status() {
             return this.$store.state.arrow.arrows[this.index].status
         },
         isSelected() {
             return this.$store.state.selected === this.id
         },
-        sizes() {
-            return {
-                fromEl: {
-                    height: this.$store.state.block.blocks[this.from].style.height,
-                    width: this.$store.state.block.blocks[this.from].style.width
-                },
-                toEl: {
-                    height: this.$store.state.block.blocks[this.to].style.height,
-                    width: this.$store.state.block.blocks[this.to].style.width
-                }
-            }
-        },
         ...mapState({
             toolsPanelWidth: state => state.toolsPanelWidth,
-            headerHeight: state => state.headerHeight
+            headerHeight: state => state.headerHeight,
+            missRange: state => state.arrow.missRange,
+            reverseDirection: state => state.arrow.reverseDirection
         })
     },
     methods: {
         select(e) {
-            var validClick = false;
-            const limits = {
-                top: this.$refs.arrowBody.getBoundingClientRect().top,
-                right: this.$refs.arrowBody.getBoundingClientRect().right,
-                bottom: this.$refs.arrowBody.getBoundingClientRect().bottom,
-                left: this.$refs.arrowBody.getBoundingClientRect().left
-            }
-            const [xDirection, yDirection] = [...this.variant.split(/[|_!]/)[0].split('-')]
-            const arrowBodyStyle = window.getComputedStyle(this.$refs.arrowBody, null)
-            
-            if(!this.variant.match(/[|_]/)) {
-                validClick = ( limits[xDirection] - this.missRange < e.clientX && e.clientX < limits[xDirection] + this.missRange )
-                    || ( limits[yDirection] - this.missRange < e.clientY && e.clientY < limits[yDirection] + this.missRange )
-            } else if (this.variant.includes('_')) {
-                const height = parseInt(arrowBodyStyle.getPropertyValue('height')) - parseInt(arrowBodyStyle.getPropertyValue('padding-bottom'))
-                    - parseInt(arrowBodyStyle.getPropertyValue('padding-top'))
-                const horizontalLineYPos = limits.top + height/2 + parseInt(arrowBodyStyle.getPropertyValue('padding-top'))
-                const reverseXDirection = this.reverseDirection[xDirection]
-                const upperXLimitClick = ( limits[xDirection] - this.missRange < e.clientX && e.clientX < limits[xDirection] + this.missRange )
-                    && e.clientY < horizontalLineYPos + this.missRange
-                const middleClick =  ( horizontalLineYPos - this.missRange < e.clientY && e.clientY < horizontalLineYPos + this.missRange )
-                const lowerXLimitClick =  ( limits[reverseXDirection] - this.missRange < e.clientX && e.clientX < limits[reverseXDirection] + this.missRange )
-                    && e.clientY > horizontalLineYPos - this.missRange
-                validClick = upperXLimitClick || middleClick ||lowerXLimitClick
-            } else if (this.variant.includes('|')) {
-                const width = parseInt(arrowBodyStyle.getPropertyValue('width')) - parseInt(arrowBodyStyle.getPropertyValue('padding-right'))
-                    - parseInt(arrowBodyStyle.getPropertyValue('padding-left'))
-                const verticalLineXPos = limits.left + width/2 + parseInt(arrowBodyStyle.getPropertyValue('padding-left'))
-                const reverseYDirection = this.reverseDirection[yDirection]
-                const upperYLimitClick = ( limits[yDirection] - this.missRange < e.clientY && e.clientY < limits[yDirection] + this.missRange )
-                    && e.clientX < verticalLineXPos + this.missRange
-                const middleClick =  ( verticalLineXPos - this.missRange < e.clientX && e.clientX < verticalLineXPos + this.missRange )
-                const lowerYLimitClick =  ( limits[reverseYDirection] - this.missRange < e.clientY && e.clientY < limits[reverseYDirection] + this.missRange )
-                    && e.clientX > verticalLineXPos - this.missRange
-                validClick = upperYLimitClick || middleClick ||lowerYLimitClick
-            }
-
-            if(validClick || e.target === this.$refs.label) {
-                this.$store.dispatch('avaliateSelection', this.id)
-                this.$store.dispatch('arrow/alterArrow', { id: 'any', alterations: { status: 'none' }})
-            } else {
-                this.$store.dispatch('avaliateSelection', '')
-                if(typeof this.status === 'string' ) {
-                    this.$store.dispatch('arrow/alterArrow',  { id: 'any', alterations: { status: e }})
-                } else {
-                    this.$store.dispatch('arrow/alterArrow', { id: this.id, alterations: { status: 'none' }})
-                }
-            }
-        },
-        buildArrow() {
-            const fromPoint = this.$store.state.block.blocks[this.from].centerPos
-            const toPoint = this.$store.state.block.blocks[this.to].centerPos
-
-            this.setSize(fromPoint, toPoint)
-            this.setPosition(fromPoint, toPoint)
-
-            this.$refs.label.style[this.reverseDirection.horizontal] = `${this.sizes.fromEl.width/2 + 10}px`
-
-            this.checkHeadPosition(this.setLabelPosition(this.variantMode))
-        },
-        setSize(from, to) {
-            let width = 2*this.missRange + Math.max(Math.abs(to.x - from.x), 2)
-            let height = 2*this.missRange + Math.max(Math.abs(to.y - from.y), 2)
-            if(this.straightMode === 'vertical') {
-                const tolerance = this.variantMode == 3 ? 40 : 0
-                width = Math.min(width, 2*this.missRange + this.sizes.fromEl.width/2 + tolerance)
-            } else if (this.straightMode === 'horizontal') {
-                const tolerance = this.variantMode == 2 ? 40 : 0
-                height = Math.min(height, 2*this.missRange + this.sizes.fromEl.height/2 + tolerance)
-            }
-            this.$refs.outerBox.style.width = `${width}px`
-            this.$refs.outerBox.style.height = `${height}px`
-        },
-        setPosition(from, to) {
-            let left = Math.min(to.x, from.x)
-            let top = Math.min(to.y, from.y)
-            if(this.straightMode === 'vertical' && to.x < from.x - this.sizes.fromEl.width/2) {
-                const correction = this.variantMode == 3 ? 40 : 0
-                left = Math.max(from.x - this.sizes.fromEl.width/2 - correction, to.x)
-            } else if(this.straightMode === 'horizontal' && to.y < from.y - this.sizes.fromEl.height/2) {
-                const correction = this.variantMode == 2 ? 40 : 0
-                top = Math.max(from.y - this.sizes.fromEl.height/2 - correction, to.y)
-            }
-            this.$refs.outerBox.style.left = `${left - this.missRange - this.toolsPanelWidth}px`
-            this.$refs.outerBox.style.top = `${top - this.missRange - this.headerHeight}px`
-        },
-        setLabelPosition(mode, Xperc = this.labelPos.x, Yperc = this.labelPos.y) {
-            const height = parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('height'));
-            const width = parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('width'));
-            var Xpos = Xperc*width;
-            var Ypos = Yperc*height;
-            const [xDirection, yDirection] = [...this.variant.split(/[|_!]/)[0].split('-')]
-            var Xset = '';
-            var Yset = '';
-
-            if(width < this.sizes.fromEl.width/2 && (this.straightMode === 'vertical' || mode != 1)) {
-                Ypos = yDirection == 'top' ? Math.max(this.sizes.fromEl.height/2, Ypos) 
-                : Math.min(height - this.sizes.fromEl.height/2, Ypos)
-                if(yDirection != 'top' && (height - this.sizes.fromEl.height/2) == Ypos) {
-                    Ypos -= this.$refs.label.offsetHeight
-                }
-            } else if (width < this.sizes.toEl.width/2 && (this.straightMode === 'horizontal' || mode == 1)) {
-                Ypos = yDirection == 'top' ? Math.max(this.sizes.toEl.height/2, Ypos) 
-                : Math.min(height - this.sizes.toEl.height/2, Ypos)
-                if(yDirection != 'top' && (height - this.sizes.toEl.height/2) == Ypos) {
-                    Ypos -= this.$refs.label.offsetHeight
-                }
-            } else if (height < this.sizes.toEl.height/2 && (this.straightMode === 'vertical' || mode != 1)) {
-                Xpos = xDirection == 'left' ? Math.max(this.sizes.toEl.width/2, Xpos)
-                : Math.min(width - this.sizes.toEl.width/2, Xpos)
-                if(xDirection != 'left' && (width - this.sizes.toEl.width/2) == Xpos) {
-                    Xpos -= this.$refs.label.offsetWidth + 10
-                }
-            } else if (height < this.sizes.fromEl.height/2 && (this.straightMode === 'horizontal' || mode == 1)) {
-                Xpos = xDirection == 'left' ? Math.max(this.sizes.fromEl.width/2, Xpos)
-                : Math.min(width - this.sizes.fromEl.width/2, Xpos)
-                if(xDirection != 'left' && (width - this.sizes.fromEl.width/2) == Xpos) {
-                    Xpos -= this.$refs.label.offsetWidth + 10
-                }
-            }
-
-            if(mode == 0 || this.straightMode === 'vertical') {
-                const Ylim = yDirection == 'top' ? 10 : height - 40
-                if(Ypos < Ylim) {
-                    Xset = yDirection == 'top' ? (xDirection == 'right' ? Math.max(Xpos, this.sizes.fromEl.width/2 + 10) 
-                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.fromEl.width/2 + 10)) : width + 10
-                    Yset = yDirection == 'top' ? -26 : Math.min(height - Ypos - this.$refs.label.offsetHeight, height - this.sizes.toEl.height/2 - 30)
-                } else {
-                    Xset = yDirection == 'top' ? width + 10 : (xDirection == 'right' ? Math.max(Xpos, this.sizes.fromEl.width/2 + 10) 
-                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.fromEl.width/2 + 10))
-                    Yset = yDirection == 'top' ? Math.min(Ypos, height - this.sizes.toEl.height/2 - 30) : 0
-                }
-            } else if (mode == 1 || this.straightMode === 'horizontal') {
-                const Ylim = yDirection == 'top' ? 10 : height - 40
-                if(Ypos < Ylim) {
-                    Xset = yDirection == 'top' ? (xDirection == 'right' ? Math.max(Xpos, this.sizes.toEl.width/2 + 10) 
-                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.toEl.width/2 + 10)) : width + 10
-                    Yset = yDirection == 'top' ? -26 : Math.min(height - Ypos - this.$refs.label.offsetHeight, height - this.sizes.fromEl.height/2 - 30)
-                } else {
-                    Xset = yDirection == 'top' ? width + 10 : (xDirection == 'right' ? Math.max(Xpos, this.sizes.toEl.width/2 + 10) 
-                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.toEl.width/2 + 10))
-                    Yset = yDirection == 'top' ? Math.min(Ypos, height - this.sizes.fromEl.height/2 - 30) : 0
-                }
-            } else if (mode == 2) {
-                const Ylim = [height/2 - this.$refs.label.offsetHeight - 10, height/2 + 10]
-                if(Ypos > Ylim[0] && Ypos< Ylim[1]) {
-                    Xset = xDirection == "right" ? Xpos : width - Xpos - this.$refs.label.offsetWidth
-                    Yset = yDirection == 'top' ? height/2 - this.$refs.label.offsetHeight : height/2
-                } else if(Ypos < Ylim[0]) {
-                    Xset = yDirection == 'top' ? - 10 - this.$refs.label.offsetWidth : width + 10
-                    Yset = yDirection == 'top' ? Math.max(Ypos, this.sizes.fromEl.height/2) 
-                        : Math.min(height - Ypos - this.$refs.label.offsetHeight, height - this.sizes.toEl.height/2 - this.$refs.label.offsetHeight)
-                } else {
-                    Xset = yDirection == 'top' ? width + 10 : -10 - this.$refs.label.offsetWidth 
-                    Yset = yDirection == 'top' ? Math.min(Ypos, height - this.sizes.toEl.height/2 - this.$refs.label.offsetHeight) 
-                        : Math.max(height - Ypos - this.$refs.label.offsetHeight, this.sizes.fromEl.height/2)
-                }
-            } else if (mode == 3) {
-                const Xlim = xDirection == 'right' ? [width/2 - 10, width/2 + this.$refs.label.offsetWidth] : [width/2 - this.$refs.label.offsetWidth - 10, width/2 + 10]
-                if(Xpos > Xlim[0] && Xpos < Xlim[1]) {
-                    Xset = width/2 + 10
-                    Yset = yDirection == 'top' ? Math.min(Ypos, height - this.$refs.label.offsetHeight) : height - Ypos - this.$refs.label.offsetHeight
-                } else if(Xpos < Xlim[0]) {
-                    Xset = xDirection == 'right' ? Math.max(Xpos, this.sizes.fromEl.width/2 + 10) 
-                        : Math.min(width - Xpos - this.$refs.label.offsetWidth, width - this.sizes.toEl.width/2 - this.$refs.label.offsetWidth - 10) 
-                    Yset = xDirection == 'right' ? (yDirection == 'top' ? -26 : 0) : height - this.$refs.label.offsetHeight
-                } else {
-                    Xset = xDirection == 'right' ? Math.min(Xpos, width - this.sizes.toEl.width/2 - this.$refs.label.offsetWidth - 10) 
-                        : Math.max(width - Xpos - this.$refs.label.offsetWidth, this.sizes.fromEl.width/2 + 10)
-                    Yset = xDirection == 'right' ? height - this.$refs.label.offsetHeight : (yDirection == 'top' ? -26 : 0)
-                }
-            }
-
-            this.$refs.label.style[yDirection] = `${Yset}px`;
-            this.$refs.label.style[xDirection] = `auto`;
-            this.$refs.label.style[this.reverseDirection[yDirection]] = `auto`
-            this.$refs.label.style[this.reverseDirection[xDirection]] = `${Xset}px`
-
-            return mode
-        },
-        dragLabel(e) {
-            if(e.buttons && this.isSelected) {
-                this.isDragging = true;
-                const Ypos = `${e.clientY - this.$refs.label.offsetHeight/2 - this.$refs.arrowBody.getBoundingClientRect().top}px`
-                const Xpos = `${e.clientX - this.$refs.label.offsetWidth/2  - this.$refs.arrowBody.getBoundingClientRect().left}px`
-                this.labelPos.y = Math.min(Math.max(0, parseInt(Ypos)/this.$refs.arrowBody.offsetHeight), 1)
-                this.labelPos.x = Math.min(Math.max(0, parseInt(Xpos)/this.$refs.arrowBody.offsetWidth), 1)
-                this.setLabelPosition(this.variantMode)
-            } else if(this.isDragging) {
-                this.isDragging = false;
-            }
-        },
-        migrateToWindow(e) {
-            if(this.isDragging) {
-                this.dragLabel(e)
-            }
+            const arrowElement = this.$refs.arrowBody
+            this.$store.dispatch('arrow/checkWhetherClickWasOnArrow', {e, arrowElement, variant: this.variant})
+                .then(validClick => {
+                    if(validClick) {
+                        this.$store.dispatch('avaliateSelection', this.id)
+                        this.$store.dispatch('arrow/alterArrow', { id: this.id, alterations: { status: 'none' }})
+                    } else if(typeof this.status === 'string' ) {
+                        this.$store.dispatch('avaliateSelection', '')
+                        this.$store.dispatch('arrow/alterArrow',  { id: 'any', alterations: { status: e }})
+                    } else {
+                        this.$store.dispatch('arrow/alterArrow', { id: this.id, alterations: { status: 'none' }})
+                    }
+                })
         },
         checkSelection(e) {
             const interactors = Array.from(document.getElementsByClassName('interactor'))
@@ -298,41 +84,77 @@ export default {
                 }
             }
         },
-        checkHeadPosition(mode) {
-            const fromPoint = this.$store.state.block.blocks[this.from].centerPos
-            const toPoint = this.$store.state.block.blocks[this.to].centerPos
-            const height = parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('height'));
-            const yDirection = fromPoint.y < toPoint.y ? 'bottom' : 'top'
-            const xDirection = fromPoint.x < toPoint.x ? 'right' : 'left'
-
-            let rotate = ''
-            if(((mode == 0 || mode == 2) && !this.straightMode) || this.straightMode === 'vertical') {
-                rotate = fromPoint.y < toPoint.y ? '180' : '0';
-                this.$refs.head.style[yDirection] = `${this.sizes.toEl.height/2 - 10}px`;
-                this.$refs.head.style[xDirection] = '-4px';
-            } else if(((mode == 1 || mode == 3) && !this.straightMode) || this.straightMode=='horizontal') {
-                rotate = fromPoint.x < toPoint.x ? '90' : '270';
-                this.$refs.head.style[yDirection] = `-7px`;
-                this.$refs.head.style[xDirection] = `${this.sizes.toEl.width/2 - 5}px`;
+        buildArrow() {
+            this.setSize()
+            this.setPosition()
+            this.setLabelPosition()
+            this.setHeadPosition()
+        },
+        setSize() {
+            this.$store.dispatch('arrow/calculateSize', this.id)
+                .then(({width, height}) => {
+                    this.$refs.outerBox.style.width = `${width}px`
+                    this.$refs.outerBox.style.height = `${height}px`
+                })
+        },
+        setPosition() {
+            this.$store.dispatch('arrow/calculatePosition', this.id)
+                .then(({top, left}) => {
+                    this.$refs.outerBox.style.left = `${left}px`
+                    this.$refs.outerBox.style.top = `${top}px`
+                })
+        },
+        setHeadPosition() {
+            this.$store.dispatch('arrow/calculateHeadPosition', this.id)
+                .then(style => {
+                    this.$refs.head.style.transform = `rotate(${style.rotate}deg)`;
+                    this.$refs.head.style.top = `${style.top}`;
+                    this.$refs.head.style.bottom = `${style.bottom}`;
+                    this.$refs.head.style.left = `${style.left}`;
+                    this.$refs.head.style.right = `${style.right}`;
+                })
+        },
+        setLabelPosition(Xperc = this.labelPos.x, Yperc = this.labelPos.y) {
+            const payload = {
+                id: this.id,
+                labelElement: this.$refs.label,
+                height: parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('height')),
+                width: parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('width')),
+                Xperc,
+                Yperc,
             }
-            this.$refs.head.style.transform = `rotate(${rotate}deg)`;
-            this.$refs.head.style[this.reverseDirection[yDirection]] = 'auto';
-            this.$refs.head.style[this.reverseDirection[xDirection]] = 'auto';
+            const [xDirection, yDirection] = [...this.variant.split(/[|_!]/)[0].split('-')]
+            this.$store.dispatch('arrow/calculateLabelPosition', payload)
+                .then(({Xset, Yset}) => {
+                    this.$refs.label.style[yDirection] = `${Yset}px`;
+                    this.$refs.label.style[xDirection] = `auto`;
+                    this.$refs.label.style[this.reverseDirection[yDirection]] = `auto`
+                    this.$refs.label.style[this.reverseDirection[xDirection]] = `${Xset}px`
+                })
         },
         definePadding() {
-            const fromPos = this.$store.state.block.blocks[this.from].centerPos
-            const toPos = this.$store.state.block.blocks[this.to].centerPos
-            this.$refs.arrowBody.style.padding = '0'
-            if(this.variant.includes('_')) {
-                const order = fromPos.y < toPos.y ? ['fromEl', 'toEl'] : ['toEl', 'fromEl']
-                this.$refs.arrowBody.style.paddingTop = `${this.sizes[order[0]].height/2 - 7}px`
-                this.$refs.arrowBody.style.paddingBottom = `${this.sizes[order[1]].height/2 - 7}px`
-            } else if(this.variant.includes('|')) {
-                const order = fromPos.x < toPos.x ? ['fromEl', 'toEl'] : ['toEl', 'fromEl']
-                this.$refs.arrowBody.style.paddingLeft = `${this.sizes[order[0]].width/2 - 7}px`
-                this.$refs.arrowBody.style.paddingRight = `${this.sizes[order[1]].width/2 - 7}px`
+            this.$store.dispatch('arrow/calculatePadding', this.id)
+                .then(padding => {
+                    this.$refs.arrowBody.style.padding = padding
+                })
+        },
+        dragLabel(e) {
+            if(e.buttons && this.isSelected) {
+                this.isDragging = true;
+                const Ypos = `${e.clientY - this.$refs.label.offsetHeight/2 - this.$refs.arrowBody.getBoundingClientRect().top}px`
+                const Xpos = `${e.clientX - this.$refs.label.offsetWidth/2  - this.$refs.arrowBody.getBoundingClientRect().left}px`
+                this.labelPos.y = Math.min(Math.max(0, parseInt(Ypos)/this.$refs.arrowBody.offsetHeight), 1)
+                this.labelPos.x = Math.min(Math.max(0, parseInt(Xpos)/this.$refs.arrowBody.offsetWidth), 1)
+                this.setLabelPosition()
+            } else if(this.isDragging) {
+                this.isDragging = false;
             }
-        }
+        },
+        migrateToWindow(e) {
+            if(this.isDragging) {
+                this.dragLabel(e)
+            }
+        },
     },
     watch: {
         status(value) {
@@ -340,7 +162,6 @@ export default {
                 if (value === 'recreated') this.isDeleted = false;
                 if (value === 'resize') this.definePadding()
                 this.buildArrow()
-                this.checkHeadPosition(this.setLabelPosition(this.variantMode))
                 this.$store.dispatch('arrow/updateArrowVariant', this.id)
                 this.$store.dispatch('arrow/alterArrow', {id: this.id, alterations: {status: 'none'}})
             } else if (typeof value === 'object' && value) {
@@ -356,7 +177,6 @@ export default {
         variant(value) {
             this.definePadding()
             this.buildArrow()
-            this.checkHeadPosition(this.variantMode)
             this.$store.dispatch('arrow/updateArrowVariant', this.id)
         }
     },
