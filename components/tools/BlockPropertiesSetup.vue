@@ -61,7 +61,6 @@
 <script>
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { mapState } from 'vuex'
-import { centralizeTextVertically } from '@/global'
 
 export default {
     name: "BlockPropertiesSetup",
@@ -112,7 +111,6 @@ export default {
                 whichStyle,
                 value: this.props[whichStyle]
             })
-            if(this.blockEl) centralizeTextVertically(this.blockEl)
         },
         lockAspect() {
             this.props.isLocked = !this.props.isLocked;
@@ -122,24 +120,6 @@ export default {
         activateTyping() {
             this.$store.commit('changeTyping', true)
         },
-        correctDecisionBorder(shapeDiv) {
-            const cropLeft = shapeDiv.querySelector('.crop-left')
-            const cropRight = shapeDiv.querySelector('.crop-right')
-
-            const ang = Math.atan(shapeDiv.getBoundingClientRect().height/shapeDiv.getBoundingClientRect().width)
-            const xMove = parseInt(this.props.borderWidth)*Math.sin(ang);
-            const yMove = parseInt(this.props.borderWidth)*Math.cos(ang);
-            const xMoveMiddle = yMove/Math.tan(ang);
-
-            cropLeft.style.clipPath = `polygon(0% 0%, calc(100% + ${xMove}px) 0%, calc(100% + ${xMove}px) ${yMove}px,
-                calc(0% + ${xMove + xMoveMiddle}px) 50%, calc(100% + ${xMove}px) calc(100% - ${yMove}px), calc(100% + ${xMove}px) 100%, 0% 100%)`
-            cropLeft.style.shapeOutside = `polygon(-5px 0%, calc(100% + ${this.props.borderWidth} - 5px) 0%, 
-                calc(0% + ${this.props.borderWidth} - 5px) 50%, calc(100% + ${this.props.borderWidth} - 5px) 100%, -5px 100%)`
-            cropRight.style.clipPath = `polygon(100% 0%, calc(0% - ${xMove}px) 0%, calc(0% - ${xMove}px) ${yMove}px,
-                calc(100% - ${xMove + xMoveMiddle}px) 50%, calc(0% - ${xMove}px) calc(100% - ${yMove}px), calc(0% - ${xMove}px) 100%, 100% 100%)`
-            cropRight.style.shapeOutside = `polygon(calc(100% + 5px) 0%, calc(0% - ${this.props.borderWidth} + 5px) 0%, 
-                calc(100% - ${this.props.borderWidth} + 5px) 50%, calc(0% - ${this.props.borderWidth} + 5px) 100%, calc(100% + 5px) 100%)`
-        }
     },
     watch: {
         blockEl(el) {
@@ -154,11 +134,6 @@ export default {
             if(value === 'resize') {
                 this.props.height = Math.ceil(this.blockEl.getBoundingClientRect().height);
                 this.props.width = Math.ceil(this.blockEl.getBoundingClientRect().width);
-
-                centralizeTextVertically(this.blockEl);
-                
-                const shapeDiv = this.blockEl.querySelector('.shape')
-                if(shapeDiv.classList.contains('decision')) this.correctDecisionBorder(shapeDiv)
             }
             this.$store.dispatch('mailer/clearEvent', 'builder');
         },

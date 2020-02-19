@@ -13,6 +13,10 @@ export const state = () => ({
         isLocked: false,
         aspect: 0.47
     },
+    alignmentMode: {
+        on: false,
+        alignWith: null,
+    }
 })
 
 export const getters = {
@@ -45,6 +49,18 @@ export const mutations = {
     },
     setEvent: (state, {id, event}) => {
         state.blocks[id].event = event
+    },
+    activateAlignmentMode: state => {
+        state.alignmentMode.on = true;
+    },
+    setAlignElement: (state, el) => {
+        state.alignmentMode.alignWith = el;
+    },
+    resetAlignmentMode: state => {
+        state.alignmentMode = {
+            on: false,
+            alignWith: null
+        }
     }
 }
 
@@ -105,6 +121,14 @@ export const actions = {
             thisCenterPos.y = targetCenterPos.y
         }
         commit('changeCenterPos', {id: thisId, newCenterPos: thisCenterPos})
+    },
+
+    toggleAlignmentMode:({ commit, state }) => {
+        if(!state.alignmentMode.on) {
+            commit('activateAlignmentMode')
+        } else {
+            commit('resetAlignmentMode')
+        }
     },
     
     clearEvent: ({ commit }, id) => {

@@ -4,7 +4,7 @@
             <div v-show="$store.state.arrow.arrowMakerMode.on" class="making-info" style="left: calc(50vw + 170px - 20px);">From?</div>
             <div v-show="$store.state.arrow.arrowMakerMode.on && $store.state.arrow.arrowMakerMode.from" class="making-info"
                 style="left: calc(50vw + 170px - 10.7px);">To?</div>
-            <div v-show="$store.state.aligning" class="making-info" style="left: calc(50vw + 170px - 35.8px);">Align with?</div>
+            <div v-show="$store.state.block.alignmentMode.on" class="making-info" style="left: calc(50vw + 170px - 35.8px);">Align with?</div>
             <h2 v-show="numberOfBlocks == 0">Drag and drop a shape here!</h2>
             <p>{{numberOfBlocks}}</p>
         </div>

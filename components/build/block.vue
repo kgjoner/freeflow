@@ -15,8 +15,8 @@
                         <p v-show="!isTyping">
                             {{text}}
                         </p>
-                        <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" v-model="text" 
-                            @focusout="centralizeText()" rows="1">
+                        <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" 
+                            v-model="text" rows="1">
                         </textarea>
                     </div>
                 </div>
@@ -95,7 +95,7 @@ export default {
             return this.$store.state.block.blocks[this.index].style.isLocked
         },
         alignWith() {
-            return this.$store.state.alignWith
+            return this.$store.state.block.alignmentMode.alignWith
         },
         fas() {
             return fas
@@ -122,6 +122,8 @@ export default {
             if(this.shape === 'decision') {
                 this.correctDecisionBorder(this.$refs.shape)
             }
+
+            this.centralizeText()
         },
         updateCenterPos() {
             const newCenterPos = {
@@ -240,6 +242,7 @@ export default {
                     this.$refs.shape.querySelector('.inside-text').style.transform = `skewX(${ang}deg)`;
                 }
                 this.updateCenterPos()
+                this.centralizeText()
                 this.updateLinkedArrowsStatus('resize')
                 this.$store.dispatch('mailer/sendMail', {to: 'builder', content: 'resize' })
             }
@@ -300,18 +303,22 @@ export default {
         },
         triggerAlignment() {
             this.isWaitingToAlign = true
-            this.$store.dispatch('toggleAligningMode')
+            this.$store.dispatch('block/toggleAlignmentMode')
         },
         alignElement() {
             this.$store.dispatch('block/alignBlocks', {thisId: this.id, targetId: this.alignWith})
                 .then(_ => {
                     this.updateLinkedArrowsStatus('drag')
-                    this.$store.dispatch('toggleAligningMode')
+                    this.$store.dispatch('block/toggleAlignmentMode')
                     this.isWaitingToAlign = false
                 })
         },
-        centralizeText() {
-            setTimeout(() => centralizeTextVertically(this.$refs.block, 'p'), 100)
+        centralizeText(wait = null) {
+            if(wait) {
+                setTimeout(() => centralizeTextVertically(this.$refs.block, 'p'), 100)
+            } else {
+                centralizeTextVertically(this.$refs.block, 'p')
+            }
         },
         correctDecisionBorder(shapeDiv) {
             shapeDiv.style.borderWidth = '0'
@@ -353,6 +360,9 @@ export default {
         Ypos(value) {
             if(this.isDragging) return
             this.$refs.block.style.top = `${value - this.$refs.block.offsetHeight/2 - this.headerHeight}px`
+        },
+        isTyping(value) {
+            if(!value) this.centralizeText('wait')
         }
     },
     mounted() {
@@ -365,9 +375,9 @@ export default {
         this.$refs.block.style.height = `${this.styleProps.height}px`;
         this.$refs.block.style.width = `${this.styleProps.width}px`;
         this.newPiece = !this.$store.state.block.blocks[this.id].isCopy
-        centralizeTextVertically(this.$refs.block)
+        this.centralizeText()
         if(this.shape === 'decision') {
-            centralizeTextVertically(this.$refs.block)
+            this.centralizeText()
             this.correctDecisionBorder(this.$refs.shape)
         }
         window.addEventListener('mousemove', this.migrateToWindow)
