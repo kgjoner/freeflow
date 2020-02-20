@@ -2,6 +2,7 @@
     <section class="build">
         <CanvasSizeInput />
         <Canvas />
+        <ClearCanvasBtn />
         <aside class="tools">
             <b-tabs class="shapes mb-4" v-model="tabIndex">
                 <b-tab title="Build" class="mt-4 ml-3" @click="tabIndex = 0">
@@ -13,7 +14,7 @@
                     <BlockPropertiesSetup />
                 </b-tab>
             </b-tabs>
-            <button class="to-canvas" @click="saveCanvas()" :disabled="isMakingArrow">Download as Image</button>
+            <button class="to-canvas" @click="downloadCanvas()" :disabled="isMakingArrow">Download as Image</button>
         </aside>
     </section>
 </template>
@@ -28,11 +29,13 @@ import BlockBuilder from '@/components/tools/BlockBuilder'
 import BlockPropertiesSetup from '@/components/tools/BlockPropertiesSetup'
 import ArrowBuilder from '@/components/tools/ArrowBuilder'
 import ArrowVariantSetup from '@/components/tools/ArrowVariantSetup'
+import ClearCanvasBtn from '@/components/canvas/ClearCanvasBtn'
 
 
 export default {
     name: "Build",
-    components: { Canvas, CanvasSizeInput, BlockBuilder, BlockPropertiesSetup, ArrowBuilder, ArrowVariantSetup },
+    components: { Canvas, CanvasSizeInput, BlockBuilder, BlockPropertiesSetup, 
+        ArrowBuilder, ArrowVariantSetup, ClearCanvasBtn },
     data: function() {
         return {
             currentEl: null,
@@ -69,7 +72,7 @@ export default {
                 this.$store.dispatch('avaliateSelection', '')
             }
         },
-        saveCanvas() {
+        downloadCanvas() {
             this.$store.dispatch('avaliateSelection', '')
             const buildSite = document.querySelector('.canvas')
             domtoimage.toPng(buildSite).then(image => {
@@ -81,6 +84,12 @@ export default {
                 pom.click();
                 document.body.removeChild(pom);     
             })
+        },
+        saveState() {
+            this.$store.dispatch('saveState')
+        },
+        loadState() {
+            this.$store.dispatch('loadState')
         }
     },
     watch: {
@@ -98,7 +107,9 @@ export default {
         },
     },
     mounted() {
+        this.loadState()
         window.addEventListener('keydown', this.deleteSelection)
+        setInterval(() => { this.saveState() }, 1000*30)
     }
 }
 </script>

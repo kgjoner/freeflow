@@ -20,12 +20,7 @@ export default {
     props: ['index', '$store'],
     data: function() {
         return {
-            labelPos: {
-                x: 0,
-                y: 0,
-            },
             isDragging: false,
-            isDeleted: false,
         }
     },
     computed: {
@@ -34,6 +29,9 @@ export default {
         },
         label() {
             return this.$store.state.arrow.arrows[this.index].label
+        },
+        labelPos() {
+            return this.$store.state.arrow.arrows[this.index].labelPos
         },
         variant() {
             return this.$store.state.arrow.arrows[this.index].variant.trim()
@@ -46,6 +44,9 @@ export default {
         },
         isSelected() {
             return this.$store.state.selected === this.id
+        },
+        isDeleted() {
+            return this.status === 'deleted'
         },
         ...mapState({
             toolsPanelWidth: state => state.toolsPanelWidth,
@@ -143,9 +144,12 @@ export default {
                 this.isDragging = true;
                 const Ypos = `${e.clientY - this.$refs.label.offsetHeight/2 - this.$refs.arrowBody.getBoundingClientRect().top}px`
                 const Xpos = `${e.clientX - this.$refs.label.offsetWidth/2  - this.$refs.arrowBody.getBoundingClientRect().left}px`
-                this.labelPos.y = Math.min(Math.max(0, parseInt(Ypos)/this.$refs.arrowBody.offsetHeight), 1)
-                this.labelPos.x = Math.min(Math.max(0, parseInt(Xpos)/this.$refs.arrowBody.offsetWidth), 1)
-                this.setLabelPosition()
+                const labelPos = {
+                    x: Math.min(Math.max(0, parseInt(Xpos)/this.$refs.arrowBody.offsetWidth), 1),
+                    y: Math.min(Math.max(0, parseInt(Ypos)/this.$refs.arrowBody.offsetHeight), 1)
+                }
+                this.$store.dispatch('arrow/alterArrow', {id: this.id, alterations: { labelPos }})
+                    .then(() => this.setLabelPosition())
             } else if(this.isDragging) {
                 this.isDragging = false;
             }
@@ -158,20 +162,15 @@ export default {
     },
     watch: {
         status(value) {
-            if(value !== 'none' && value !== 'deleted' && typeof value === 'string') {
-                if (value === 'recreated') this.isDeleted = false;
+            if(value === 'destruction') {
+                this.$destroy()
+            } else if(value !== 'none' && value !== 'deleted' && typeof value === 'string') {
                 if (value === 'resize') this.definePadding()
                 this.buildArrow()
                 this.$store.dispatch('arrow/updateArrowVariant', this.id)
                 this.$store.dispatch('arrow/alterArrow', {id: this.id, alterations: {status: 'none'}})
             } else if (typeof value === 'object' && value) {
                 this.select(value)
-            } else if ( value === 'deleted') {
-                this.isDeleted = true;
-                this.labelPos = {
-                    x: 0,
-                    y: 0,
-                }
             }
         },
         variant(value) {

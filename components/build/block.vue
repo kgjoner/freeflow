@@ -102,7 +102,8 @@ export default {
         },
         ...mapState({
             toolsPanelWidth: state => state.toolsPanelWidth,
-            headerHeight: state => state.headerHeight
+            headerHeight: state => state.headerHeight,
+            isLoadingState: state => state.isLoadingState
         })
     },
     methods: {
@@ -126,9 +127,10 @@ export default {
             this.centralizeText()
         },
         updateCenterPos() {
+            const canvas = document.querySelector('.canvas-box')
             const newCenterPos = {
-                x: this.$refs.block.getBoundingClientRect().left + this.styleProps.width/2,
-                y: this.$refs.block.getBoundingClientRect().top + this.styleProps.height/2
+                x: this.$refs.block.getBoundingClientRect().left + this.styleProps.width/2 + canvas.scrollLeft,
+                y: this.$refs.block.getBoundingClientRect().top + this.styleProps.height/2 + canvas.scrollTop
             }
             this.$store.dispatch('block/changeCenterPos', {id: this.id, newCenterPos})
         },
@@ -208,6 +210,7 @@ export default {
                     }
                 }
 
+                const canvas = document.querySelector('.canvas-box')
                 this.$refs.block.style.width = width + 'px';
                 this.$store.dispatch('block/assignStyleChange', {
                     id: this.id,
@@ -217,7 +220,7 @@ export default {
                 if(dirX == 'left' && parseInt(elStyle.getPropertyValue('width')) > 30) {
                     const left = this.$refs.block.getBoundingClientRect().left + window.scrollX
                     const truePageX = left + (previousWidth - width)
-                    this.$refs.block.style.left = `${truePageX - this.toolsPanelWidth}px`
+                    this.$refs.block.style.left = `${truePageX - this.toolsPanelWidth + canvas.scrollLeft}px`
                 }
 
                 this.$refs.block.style.height = height + 'px';
@@ -229,7 +232,7 @@ export default {
                 if(dirY == 'top' && parseInt(elStyle.getPropertyValue('height')) > 30) {
                     const top = this.$refs.block.getBoundingClientRect().top + window.scrollY
                     const truePageY = top + (previousHeight - height)
-                    this.$refs.block.style.top = `${truePageY - this.headerHeight}px`
+                    this.$refs.block.style.top = `${truePageY - this.headerHeight + canvas.scrollTop}px`
                 }
 
                 if(this.shape === 'data') {
@@ -259,13 +262,13 @@ export default {
             this.resizing.active = false;
             this.$refs.block.style.cursor = 'grab'
             if(this.newPiece) {
-                const canvas = document.querySelector('.canvas-box')
-                this.$refs.block.style.left = `${this.Xpos - this.$refs.block.offsetWidth/2 - this.toolsPanelWidth + canvas.scrollLeft}px`
+                this.$refs.block.style.left = `${this.Xpos - this.$refs.block.offsetWidth/2 - this.toolsPanelWidth}px`
                 setTimeout(() => {
                     this.$store.dispatch('mailer/sendMail', { to: 'canvas', content: 'drag'})
                     .then(_ => {
                         this.$store.commit('changeSelection', '')
                         this.newPiece = false
+                        this.updateCenterPos()
                     })
                 }, 0)
             }
@@ -293,7 +296,7 @@ export default {
         },
         copyElement() {
             const centerPos = {
-                x: this.$refs.block.getBoundingClientRect().right + window.scrollX - this.toolsPanelWidth,
+                x: this.$refs.block.getBoundingClientRect().right + window.scrollX,
                 y: this.$refs.block.getBoundingClientRect().bottom + window.scrollY
             }
             this.$store.dispatch('block/prepBlockToAdd', {shape: this.shape, copyId: this.id, centerPos})
@@ -362,20 +365,29 @@ export default {
             this.$refs.block.style.top = `${value - this.$refs.block.offsetHeight/2 - this.headerHeight}px`
         },
         isTyping(value) {
-            if(!value) this.centralizeText('wait')
+            if(!value) {
+                this.centralizeText('wait')
+                this.$store.dispatch('block/updateStoredText', {id: this.id, text: this.text})
+            }
         }
     },
     mounted() {
+        this.newPiece = !this.isLoadingState && !this.$store.state.block.blocks[this.id].isCopy
+        const correction = this.newPiece ? 0 : this.toolsPanelWidth
         this.$refs.block.style.top = `${this.Ypos - this.styleProps.height/2 - this.headerHeight}px`;
-        this.$refs.block.style.left = `${this.Xpos - this.styleProps.width/2}px`;
+        this.$refs.block.style.left = `${this.Xpos - this.styleProps.width/2 - correction}px`;
         this.$refs.shape.style.backgroundColor = this.styleProps.backgroundColor
         this.$refs.shape.style.border = `${this.styleProps.borderWidth} ${this.styleProps.borderStyle} ${this.styleProps.borderColor}`;
         this.$refs.block.querySelector('p').style.color = this.styleProps.color;
         this.$refs.block.querySelector('p').style.fontSize = this.styleProps.fontSize;
         this.$refs.block.style.height = `${this.styleProps.height}px`;
         this.$refs.block.style.width = `${this.styleProps.width}px`;
-        this.newPiece = !this.$store.state.block.blocks[this.id].isCopy
-        this.centralizeText()
+        if(this.isLoadingState) {
+            this.text = this.$store.state.block.blocks[this.index].text || this.text
+            this.centralizeText('wait')
+        } else {
+            this.centralizeText()
+        }
         if(this.shape === 'decision') {
             this.centralizeText()
             this.correctDecisionBorder(this.$refs.shape)

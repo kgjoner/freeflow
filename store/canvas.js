@@ -13,9 +13,10 @@ export const actions = {
 	defineInitialSize: ({ commit, rootState }) => {
 		const width = window.innerWidth - rootState.toolsPanelWidth
 		const height = window.innerHeight - rootState.headerHeight
-		commit('setSize', { dimension: 'width', newSize: width })
-		commit('setSize', { dimension: 'height', newSize: height })
-		return { width, height }
+		if(!rootState.isLoadingState) {
+			commit('setSize', { dimension: 'width', newSize: width })
+			commit('setSize', { dimension: 'height', newSize: height })
+		}
 	},
 
 	setSize: ({ commit, rootState }, { dimension, scroll, newSize }) => {

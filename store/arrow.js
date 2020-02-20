@@ -52,6 +52,9 @@ export const mutations = {
     },
     updateVariants: (state, variants) => {
         state.variants = [...variants]
+    },
+    resetArrows: state => {
+        state.arrows = []
     }
 }
 
@@ -95,6 +98,7 @@ export const actions = {
             from: state.arrowMakerMode.from,
             to: state.arrowMakerMode.to,
             label: state.arrowMakerMode.label,
+            labelPos: {x: 0, y: 0},
             variant: '',
             variantMode: 0,
             status: 'none' 
@@ -178,7 +182,7 @@ export const actions = {
     deleteArrow: ({ commit, state }, id) => {
         state.arrows.some((arrow, index) => {
             if(arrow.id == id) {
-                commit('alterArrow', { index, alterations: { label: '', variantMode: 0 }})
+                commit('alterArrow', { index, alterations: { label: '', variantMode: 0 , labelPos: {x: 0, y: 0} } })
                 commit('deleteArrow', index)
                 return true
             }

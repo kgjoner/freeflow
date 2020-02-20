@@ -50,6 +50,9 @@ export const mutations = {
     setEvent: (state, {id, event}) => {
         state.blocks[id].event = event
     },
+    setText: (state, {id, text}) => {
+        state.blocks[id].text = text
+    },
     activateAlignmentMode: state => {
         state.alignmentMode.on = true;
     },
@@ -61,6 +64,10 @@ export const mutations = {
             on: false,
             alignWith: null
         }
+    },
+    resetBlocks: state => {
+        state._nextId = 0
+        state.blocks = [null]
     }
 }
 
@@ -133,5 +140,9 @@ export const actions = {
     
     clearEvent: ({ commit }, id) => {
         commit('setEvent', {id, event: 'none'})
-    }
+    },
+
+    updateStoredText: ({ commit }, {id, text}) => {
+        commit('setText', {id, text})
+    },
 }

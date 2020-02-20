@@ -1,12 +1,11 @@
 <template>
-    <div class="canvas-box" ref="canvasBox">
+    <div class="canvas-box" ref="canvasBox" :key="renderKey">
         <div class="canvas" ref="canvas" :style="`height: ${canvas.height}px; width: ${canvas.width}px;`">
             <div v-show="$store.state.arrow.arrowMakerMode.on" class="making-info" style="left: calc(50vw + 170px - 20px);">From?</div>
             <div v-show="$store.state.arrow.arrowMakerMode.on && $store.state.arrow.arrowMakerMode.from" class="making-info"
                 style="left: calc(50vw + 170px - 10.7px);">To?</div>
             <div v-show="$store.state.block.alignmentMode.on" class="making-info" style="left: calc(50vw + 170px - 35.8px);">Align with?</div>
             <h2 v-show="numberOfBlocks == 0">Drag and drop a shape here!</h2>
-            <p>{{numberOfBlocks}}</p>
         </div>
     </div>
 </template>
@@ -24,6 +23,7 @@ export default {
     data: function() {
         return {
             storedId: null,
+            renderKey: 0,
         }
     },
     computed: {
@@ -31,7 +31,10 @@ export default {
             canvas: state => state.canvas,
             event: state => state.mailer.canvas,
             toolsPanelWidth: state => state.toolsPanelWidth,
-            headerHeight: state => state.headerHeight
+            headerHeight: state => state.headerHeight,
+            isLoadingState: state => state.isLoadingState,
+            blocks: state => state.block.blocks,
+            arrows: state => state.arrow.arrows
         }),
         ...mapGetters({
             numberOfBlocks: 'block/quantity'
@@ -51,8 +54,8 @@ export default {
             el.id = 'addHere';
             let parent = this.$refs.canvas
             if(whichComponent === 'block') {
-                const isCopy = this.$store.state.block.blocks[propsData.index].isCopy
-                if(!isCopy) {
+                const isCopy = this.blocks[propsData.index].isCopy
+                if(!isCopy && !this.isLoadingState) {
                     parent =  document.querySelector('.build')
                     this.storedId = propsData.index
                     window.addEventListener('mouseup', this.insertToCanvas)
@@ -65,7 +68,7 @@ export default {
             instance.$mount('#addHere')
         },
         insertToCanvas() {
-            const isTargetOnCanvas = this.$store.state.block.blocks[this.storedId].centerPos.x > this.toolsPanelWidth
+            const isTargetOnCanvas = this.blocks[this.storedId].centerPos.x > this.toolsPanelWidth
             const targetBlock = document.getElementById(this.storedId)
             document.querySelector('.build').removeChild(targetBlock)
             if(isTargetOnCanvas) {
@@ -117,6 +120,37 @@ export default {
                 } else if (movement.y < 0 && this.currentEl.getBoundingClientRect().top < this.headerHeight) {
                     this.$refs.canvasBox.scroll(scrollLeft, scrollTop - 5)
                 }
+            } else if(value.includes('load')) {
+                const propsData = { $store: this.$store }
+
+                this.blocks.forEach(block => {
+                    if(!block || block.event === 'destruction') return
+                    propsData.index = block.id
+                    this.create('block', propsData)
+                })
+
+                this.arrows.forEach((arrow, index) => {
+                    if(arrow.status === 'deleted') return
+                    propsData.index = index
+                    this.create('arrow', propsData)
+                })
+
+                this.$store.dispatch('avaliateSelection', '')
+                this.$store.dispatch('finishLoadingState')
+
+            } else if(value.includes('reset')) {
+                this.blocks.forEach(block => {
+                    if(!block || block.event === 'destruction') return
+                    this.$store.dispatch('block/deleteBlock', block.id)
+                    this.removeBlock(block.id)
+                })
+
+                this.arrows.forEach(arrow => {
+                    this.$store.dispatch('arrow/alterArrow', {id: arrow.id, alterations: {status: 'destruction'}})
+                    this.removeBlock(arrow.id)
+                })
+                this.renderKey++
+                this.$nextTick(() => this.$store.dispatch('resetState'))
             }
             this.$store.dispatch('mailer/clearEvent', 'canvas');
         }

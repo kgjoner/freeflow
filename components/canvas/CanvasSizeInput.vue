@@ -29,7 +29,8 @@ export default {
 	computed: {
 		...mapState({
 			storedCanvasWidth: state => state.canvas.width,
-			storedCanvasHeight: state => state.canvas.height
+			storedCanvasHeight: state => state.canvas.height,
+			isLoadingState: state => state.isLoadingState
 		})
 	},
 	methods: {
@@ -48,11 +49,10 @@ export default {
 		},
 		storedCanvasHeight(newHeight) {
 			this.canvas.height = newHeight
-		}
+		},
 	},
 	mounted() {
 		this.$store.dispatch('canvas/defineInitialSize')
-			.then(initialSize => this.canvas = initialSize)
 	}
 }
 </script>
@@ -61,7 +61,7 @@ export default {
 .canvas-size {
 	position: fixed;
 	top: 15px;
-	left: calc(50vw + 20px);
+	left: calc(50vw - 20px);
 	z-index: 91;
 
 	display: flex;
