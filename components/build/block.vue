@@ -63,7 +63,8 @@ export default {
                 X: 0,
                 Y: 0
             },
-            isWaitingToAlign: false
+            isWaitingToAlign: false,
+            automaticDrag: false,
         }
     },
     computed: {
@@ -142,9 +143,9 @@ export default {
                 this.$refs.typeBox.select()
             }, 100)
         },
-        drag(e) {
+        drag(e, wasAutomaticallyFired = false) {
             if(e.buttons && !this.resizing.active && !this.isTyping && (this.isSelected || this.newPiece)) {
-                if(!this.isDragging) {
+                if(!this.isDragging && !wasAutomaticallyFired) {
                     this.isDragging = true
                     window.addEventListener('mouseup', this.checkPosition)
                     this.dragOrigins.Y = e.clientY - this.$refs.block.getBoundingClientRect().top
@@ -170,6 +171,15 @@ export default {
                     const json = JSON.stringify(movement)
                     this.$store.dispatch('mailer/sendMail', { to: 'canvas', content: `drag(${json})`})
                     this.updateLinkedArrowsStatus('drag')
+
+                    if(this.automaticDrag && (!this.isDragging || !wasAutomaticallyFired)) {
+                        this.automaticDrag = false
+                    } else if((movementOutCanvas.x || movementOutCanvas.y) && !wasAutomaticallyFired) {
+                        this.automaticDrag = true
+                    }
+                    if(this.automaticDrag) {
+                        setTimeout(() => this.drag(e, true), 0)
+                    }
                 }
             }
         },
