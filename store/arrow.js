@@ -86,7 +86,7 @@ export const actions = {
             return true
         })
         if(isIdNew) {   
-            dispatch('prepArrowToAdd', id).then(_ => {
+            dispatch('prepArrowToAdd', id).then(() => {
                 dispatch('mailer/sendMail', {to: 'canvas', content: `create:arrow(${getters.latestIndex})` }, {root: true})
                 commit('resetArrowMakerMode')
             })

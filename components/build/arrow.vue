@@ -1,13 +1,14 @@
 <template>
     <div v-show="!isDeleted" class="arrow" :class="{'selected' : isSelected}" ref="outerBox" :id="id"
     @mousedown="e => select(e)">
-        <div class="arrow-body" ref="arrowBody"
+        <div class="arrow__container" ref="container"
             :class="[{'horizontal-split': variant.match(/_/)}, {'vertical-split': variant.match(/\|/) && !straightMode}]">
-            <div class="main-body" :class="[...variant.split(/[|_!]/)[0].split('-')]" ref="mainBody"></div>
+            <div class="arrow__main-body" :class="[...variant.split(/[|_!]/)[0].split('-')]" ref="mainBody"></div>
             <div v-show="variant.match(/[|_]/)" 
-                class="aditional-body" :class="variant.split(/[|_]/)[1]"></div>
-            <div class="arrow-head" ref="head"></div>
-            <div class="arrow-label" ref="label" @mousemove="e => dragLabel(e)">{{label}}</div>
+                class="arrow__aditional-body" :class="variant.split(/[|_]/)[1]">
+            </div>
+            <div class="arrow__head" ref="head"></div>
+            <div class="arrow__label" ref="label" @mousemove="e => dragLabel(e)">{{label}}</div>
         </div>
     </div>
 </template>
@@ -57,7 +58,7 @@ export default {
     },
     methods: {
         select(e) {
-            const arrowElement = this.$refs.arrowBody
+            const arrowElement = this.$refs.container
             this.$store.dispatch('arrow/checkWhetherClickWasOnArrow', {e, arrowElement, variant: this.variant})
                 .then(validClick => {
                     if(validClick) {
@@ -119,8 +120,8 @@ export default {
             const payload = {
                 id: this.id,
                 labelElement: this.$refs.label,
-                height: parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('height')),
-                width: parseInt(window.getComputedStyle(this.$refs.arrowBody, null).getPropertyValue('width')),
+                height: parseInt(window.getComputedStyle(this.$refs.container, null).getPropertyValue('height')),
+                width: parseInt(window.getComputedStyle(this.$refs.container, null).getPropertyValue('width')),
                 Xperc,
                 Yperc,
             }
@@ -136,17 +137,17 @@ export default {
         definePadding() {
             this.$store.dispatch('arrow/calculatePadding', this.id)
                 .then(padding => {
-                    this.$refs.arrowBody.style.padding = padding
+                    this.$refs.container.style.padding = padding
                 })
         },
         dragLabel(e) {
             if(e.buttons && this.isSelected) {
                 this.isDragging = true;
-                const Ypos = `${e.clientY - this.$refs.label.offsetHeight/2 - this.$refs.arrowBody.getBoundingClientRect().top}px`
-                const Xpos = `${e.clientX - this.$refs.label.offsetWidth/2  - this.$refs.arrowBody.getBoundingClientRect().left}px`
+                const Ypos = `${e.clientY - this.$refs.label.offsetHeight/2 - this.$refs.container.getBoundingClientRect().top}px`
+                const Xpos = `${e.clientX - this.$refs.label.offsetWidth/2  - this.$refs.container.getBoundingClientRect().left}px`
                 const labelPos = {
-                    x: Math.min(Math.max(0, parseInt(Xpos)/this.$refs.arrowBody.offsetWidth), 1),
-                    y: Math.min(Math.max(0, parseInt(Ypos)/this.$refs.arrowBody.offsetHeight), 1)
+                    x: Math.min(Math.max(0, parseInt(Xpos)/this.$refs.container.offsetWidth), 1),
+                    y: Math.min(Math.max(0, parseInt(Ypos)/this.$refs.container.offsetHeight), 1)
                 }
                 this.$store.dispatch('arrow/alterArrow', {id: this.id, alterations: { labelPos }})
                     .then(() => this.setLabelPosition())
@@ -204,7 +205,7 @@ export default {
     z-index: 1;
 }
 
-.arrow-head {
+.arrow__head {
     border-left: 5px solid transparent;
     border-right: 5px solid transparent;
     border-bottom: 15px solid rgba(27, 27, 27, 1);
@@ -216,69 +217,70 @@ export default {
     right: 0;
 }
 
-.arrow-body, .main-body {
+.arrow__container, .arrow__main-body {
     width: 100%;
     height: 100%;
     position: relative;
 }
 
-.arrow-body.vertical-split {
+.arrow__container.vertical-split {
     display: flex;
 }
 
-.selected .arrow-body, .selected .main-body, 
-.selected .aditional-body {
+.selected .arrow__container, 
+.selected .arrow__main-body, 
+.selected .arrow__aditional-body {
     border-color: var(--selected-color) !important;
 }
 
-.selected .arrow-head {
+.selected .arrow__head {
     border-bottom-color: var(--selected-color) !important;
 }
 
-.selected .arrow-label {
+.selected .arrow__label {
     color: var(--selected-color) !important;
     z-index: 2
 }
 
-.horizontal-split .main-body {
+.horizontal-split .arrow__main-body {
     height: calc(50% + 1px);
 }
 
-.horizontal-split .aditional-body {
+.horizontal-split .arrow__aditional-body {
     height: calc(50% - 1px);
 }
 
-.vertical-split .main-body  {
+.vertical-split .arrow__main-body  {
     width: calc(50% + 1px);
     height: 100%;
 }
 
-.vertical-split .aditional-body {
+.vertical-split .arrow__aditional-body {
     width: calc(50% - 1px);
     height: 100%;
 }
 
-.main-body.top,
-.aditional-body.top {
+.arrow__main-body.top,
+.arrow__aditional-body.top {
     border-top: 1px solid var(--border-color);
 }
 
-.main-body.right,
-.aditional-body.right {
+.arrow__main-body.right,
+.arrow__aditional-body.right {
     border-right: 1px solid var(--border-color);
 }
 
-.main-body.bottom,
-.aditional-body.bottom {
+.arrow__main-body.bottom,
+.arrow__aditional-body.bottom {
     border-bottom: 1px solid var(--border-color);
 }
 
-.main-body.left,
-.aditional-body.left {
+.arrow__main-body.left,
+.arrow__aditional-body.left {
     border-left: 1px solid var(--border-color);
 }
 
-.arrow .arrow-label {
+.arrow .arrow__label {
     font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
     color: rgba(0,0,0,0.6);
     font-size: 1.1rem;
@@ -293,11 +295,11 @@ export default {
     -webkit-user-select:none;
 }
 
-:not([kg-mode="2"]) .main-body.bd-top ~ .arrow-label {
+:not([kg-mode="2"]) .arrow__main-body.bd-top ~ .arrow__label {
     top: calc(-1.1rem - 8px);
 }
 
-:not([kg-mode="2"]) .main-body.bd-bottom ~ .arrow-label {
+:not([kg-mode="2"]) .arrow__main-body.bd-bottom ~ .arrow__label {
     bottom: 2px;
 }
 </style>

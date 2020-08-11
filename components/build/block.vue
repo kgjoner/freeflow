@@ -3,39 +3,50 @@
         ref="block" :id="id"
         @mousedown="select" 
         @mouseup="checkPosition">
-        <div class="reference">
-            <div class="shape" :class="shape" ref="shape"
+        <div class="block__container">
+            <div class="block__shape" :class="shape" ref="shape"
             @mousemove="e => drag(e)"
             @dblclick="type"
             @keypress.enter="type(false)">
-                <div class="inside-text" unselectable="on" onselectstart="return false;" >
-                    <div class="crop-left" kg-border="1px"></div>
-                    <div class="crop-right"></div>
-                    <div class="real-text">
+                <div class="block__text" unselectable="on" onselectstart="return false;" >
+                    <div class="block__left-cropper" kg-border="1px"></div>
+                    <div class="block__right-cropper"></div>
+                    <div class="block__text-content">
                         <p v-show="!isTyping">
                             {{text}}
                         </p>
-                        <textarea v-show="isTyping" class="type-box" type="text" ref="typeBox" 
+                        <textarea v-show="isTyping" class="block__type-box" type="text" ref="typeBox" 
                             v-model="text" rows="1">
                         </textarea>
                     </div>
                 </div>
             </div>
-            <div v-if="isSelected" class="options-buttons bottom">
-                <button class="copy-button mr-1" @click="copyElement()">
+            <div v-if="isSelected" class="block__tools bottom">
+                <button class="block__tool mr-1" @click="copyElement()">
                     <fa :icon="fas.faCopy"/>
                 </button>
-               <button v-show="$store.getters['block/quantity'] > 1" class="align-button mr-1" @click="triggerAlignment()">
+               <button v-show="$store.getters['block/quantity'] > 1" 
+                    class="block__tool block__tool--align mr-1" @click="triggerAlignment()">
                     <fa :icon="fas.faAlignCenter"/>
                 </button>
-                <button v-show="$store.getters['block/quantity'] > 1" class="arrow-button" @click="setArrow()">
+                <button v-show="$store.getters['block/quantity'] > 1" 
+                    class="block__tool" @click="setArrow()">
                     <fa :icon="fas.faLongArrowAltUp" style="transform: rotate(45deg);"/>
                 </button>
             </div>
-            <div v-show="isSelected" class="resizer top-left" @mousemove="e => resize(e, 'left', 'top')"></div>        
-            <div v-show="isSelected" class="resizer top-right" @mousemove="e => resize(e, 'right', 'top')"></div>        
-            <div v-show="isSelected" class="resizer bottom-right" @mousemove="e => resize(e, 'right', 'bottom')"></div>        
-            <div v-show="isSelected" class="resizer bottom-left" @mousemove="e => resize(e, 'left', 'bottom')"></div>        
+
+            <div v-show="isSelected" class="block__resizer block__resizer--top-left" 
+                @mousemove="e => resize(e, 'left', 'top')">
+            </div>        
+            <div v-show="isSelected" class="block__resizer block__resizer--top-right" 
+                @mousemove="e => resize(e, 'right', 'top')">
+            </div>        
+            <div v-show="isSelected" class="block__resizer block__resizer--bottom-right" 
+                @mousemove="e => resize(e, 'right', 'bottom')">
+            </div>        
+            <div v-show="isSelected" class="block__resizer block__resizer--bottom-left" 
+                @mousemove="e => resize(e, 'left', 'bottom')">
+            </div>        
         </div>
     </div>
 </template>
@@ -252,7 +263,7 @@ export default {
                     const angularHeight = height - 10;
                     const ang = Math.atan(angularBase/angularHeight)*180/Math.PI
                     this.$refs.shape.style.transform = `skewX(-${ang}deg)`;
-                    this.$refs.shape.querySelector('.inside-text').style.transform = `skewX(${ang}deg)`;
+                    this.$refs.shape.querySelector('.block__text').style.transform = `skewX(${ang}deg)`;
                 }
                 this.updateCenterPos()
                 this.centralizeText()
@@ -335,8 +346,8 @@ export default {
         },
         correctDecisionBorder(shapeDiv) {
             shapeDiv.style.borderWidth = '0'
-            const cropLeft = shapeDiv.querySelector('.crop-left')
-            const cropRight = shapeDiv.querySelector('.crop-right')
+            const cropLeft = shapeDiv.querySelector('.block__left-cropper')
+            const cropRight = shapeDiv.querySelector('.block__right-cropper')
             cropLeft.setAttribute('kg-border', this.styleProps.borderWidth);
             cropLeft.style.backgroundColor = this.styleProps.borderWidth != '0px' ? this.styleProps.borderColor : 'transparent'
             cropRight.style.backgroundColor = this.styleProps.borderWidth != '0px' ? this.styleProps.borderColor : 'transparent'
@@ -434,13 +445,13 @@ export default {
     border-radius: 5px;
 }
 
-.block .reference {
+.block__container {
     width: 100%;
     height: 100%;
     position: relative;
 }
 
-.shape {
+.block__shape {
     height: calc(100% - 10px);
     width: calc(100% - 10px);
     background-color:#6ecbdb;
@@ -451,17 +462,17 @@ export default {
     left: 5px;
 }
 
-.shape.terminator {
+.block__shape.terminator {
     border-radius: 1000px;
 }
 
-.shape.data {
+.block__shape.data {
     width: calc(80% - 10px);
     left: calc(10% + 5px);
     transform: skewX(-20deg);
 }
 
-.shape.decision {
+.block__shape.decision {
     height: calc(100% - 5px);
     width: calc(100% - 5px);
     top: 2.5px;
@@ -469,7 +480,7 @@ export default {
     -webkit-clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
     clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
 }
-/* .shape.decision:before {
+/* .block__shape.decision:before {
     content: '';
     position: absolute;
     background-color: var(--theme-color-1);
@@ -485,20 +496,20 @@ export default {
     width: 80px;
 }
 
-.shape.connector {
+.block__shape.connector {
     border-radius: 50%;
 }
 
-.shape.delay {
+.block__shape.delay {
     border-top-right-radius: 50%;
     border-bottom-right-radius: 50%;
 }
 
-.shape.data .inside-text {
+.block__shape.data .block__text {
     transform: skew(20deg);
 }
 
-.inside-text {
+.block__text {
     width: 100%;
     height: 100%;
     overflow: hidden;
@@ -508,7 +519,7 @@ export default {
     vertical-align: center;
 }
 
-.inside-text p {
+.block__text p {
     font-family: 'Arial';
     font-size: 1.1rem;
     letter-spacing: 0.4px;
@@ -518,7 +529,7 @@ export default {
     text-align: center;
 }
 
-.type-box {
+.block__type-box {
     width: 100%;
     text-align: center;
     background-color: transparent;
@@ -535,11 +546,11 @@ export default {
     position: absolute;
 }
 
-.shape.decision .type-box {
+.block__shape.decision .block__type-box {
     left: 0;
 }
 
-.shape.decision .crop-left {
+.block__shape.decision .block__left-cropper {
     content: ' ';
     display: block;
     float: left;
@@ -549,7 +560,7 @@ export default {
     clip-path: polygon(0% 0%, calc(100% + 2px) 0%, calc(0% + 2px) 50%, calc(100% + 2px) 100%, 0% 100%);
     shape-outside: polygon(-10% 0%, 90% 0%, -10% 50%, 90% 100%, -10% 100%);
 }
-.shape.decision .crop-right {
+.block__shape.decision .block__right-cropper {
     content: ' ';
     display: block;
     float: right;
@@ -560,13 +571,7 @@ export default {
     shape-outside: polygon(110% 0%, 10% 0%, 110% 50%, 10% 100%, 110% 100%);
 }
 
-.resizers {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-}
-
-.resizer {
+.block__resizer {
     position: absolute;
     width: 10px;
     height: 10px;
@@ -575,31 +580,31 @@ export default {
     background-color: #fff;
 }
 
-.resizer.top-left {
+.block__resizer--top-left {
     top: -5px;
     left: -5PX;
     cursor: nw-resize;
 }
 
-.resizer.top-right {
+.block__resizer--top-right {
     top: -5px;
     right: -5px;
     cursor: ne-resize;
 }
 
-.resizer.bottom-right {
+.block__resizer--bottom-right {
     bottom: -5px;
     right: -5px;
     cursor: se-resize;
 }
 
-.resizer.bottom-left {
+.block__resizer--bottom-left {
     bottom: -5px;
     left: -5px;
     cursor: sw-resize;
 }
 
-.options-buttons {
+.block__tools {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -609,17 +614,16 @@ export default {
     top: -30px;
 }
 
-.options-buttons.bottom {
+.block__tools.bottom {
     flex-direction: row;
     left: auto;
     top: auto;
     right: auto;
     bottom: -30px;
+    animation: buttonshowff 1s;
 }
 
-button.align-button,
-button.copy-button,
-button.arrow-button {
+button.block__tool {
     width: 25px;
     height: 25px;
     background-color: var(--theme-color-1);
@@ -627,11 +631,9 @@ button.arrow-button {
     border-radius: 5px;
     outline: none;
     padding: 1 0;
-    animation-name: buttonshowff;
-    animation-duration: 30s;
 }
 
-button.align-button svg {
+button.block__tool--align svg {
     color: #fcfcfc;
 }
 
@@ -640,7 +642,7 @@ button.align-button svg {
 }
 
 @keyframes buttonshowoff {
-    0% { left: calc(100% - 25px);}
-    100% { left: calc(100%);}
+    0% { bottom: -5px;}
+    100% { bottom: -30px;}
 }
 </style>

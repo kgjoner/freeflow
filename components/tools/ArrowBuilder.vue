@@ -56,7 +56,7 @@ export default {
     },
     watch: {
         arrowEl(el) {
-            this.arrow.label = el ? el.querySelector('.arrow-label').innerHTML : ''
+            this.arrow.label = el ? el.querySelector('.arrow__label').innerHTML : ''
         }
     }
 }
