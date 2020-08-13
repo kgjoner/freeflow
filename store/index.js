@@ -1,4 +1,4 @@
-import { storeState, getState } from '../api/state.js'
+import { storeState, getState } from '../api/localStorage.js'
 
 export const state = () => ({
     selected: "",
